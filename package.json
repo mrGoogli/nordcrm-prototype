@@ -1,4 +1,3 @@
-{ this.textContent = 'Copied'; setTimeout(() => this.textContent = 'Copy', 2000); })" style="position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 3px 10px; cursor: pointer; border-radius: var(--border-radius-md);">Copy
 {
   "name": "nordcrm-prototype",
   "version": "1.0.0",
