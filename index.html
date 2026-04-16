@@ -313,7 +313,7 @@ body{background:var(--canvas);color:var(--ink);font-family:'Geist',sans-serif;fo
 </head>
 <body>
 
-<div class="app">
+<div class="app" id="app">
 
 <!-- ═══════════ TOPBAR ═══════════ -->
 <div class="topbar">
@@ -325,6 +325,7 @@ body{background:var(--canvas);color:var(--ink);font-family:'Geist',sans-serif;fo
     <div class="nav-item" id="nav-pipeline" onclick="goView('pipeline')">Pipeline</div>
     <div class="nav-item" id="nav-customers" onclick="goView('customers')">Mine Kunder</div>
     <div class="nav-item" id="nav-reports" onclick="goView('reports')">Rapportering</div>
+    <div class="nav-item" id="nav-admin" onclick="openAdminPanel()" style="display:none;color:#a78bfa">👥 Admin</div>
   </div>
   <div class="tb-right">
     <div class="tb-icon" onclick="openNewDeal()">＋</div>
@@ -371,6 +372,13 @@ body{background:var(--canvas);color:var(--ink);font-family:'Geist',sans-serif;fo
     <div class="sb-label">Brugere</div>
     <div class="sb-link" id="sb-settings" onclick="openSettings()">
       <span class="sb-ico">⚙</span>Indstillinger
+    </div>
+  </div>
+  <div class="sb-section" id="sb-admin-section" style="display:none">
+    <div class="sb-rule"></div>
+    <div class="sb-label">Administration</div>
+    <div class="sb-link" id="sb-admin" onclick="openAdminPanel()">
+      <span class="sb-ico">👥</span>Brugere
     </div>
   </div>
 </div>
@@ -1642,20 +1650,581 @@ function confirmReset(){
 }
 
 // ═══════════════════════════════════════
-//  INIT
+//  AUTH SYSTEM
 // ═══════════════════════════════════════
-function init(){
-  document.getElementById('userAvatar').textContent=state.settings.initials||'?';
+const ADMIN_EMAIL = 'johann.odinsson@opendo.dk';
+
+// Auth storage (shared across all users of this browser — in a real deployment
+// each user has their own device/browser, so localStorage works fine for this)
+const AUTH = {
+  get users(){ try{ return JSON.parse(localStorage.getItem('ncrm_users')||'[]') }catch(e){return []} },
+  set users(v){ localStorage.setItem('ncrm_users', JSON.stringify(v)) },
+  get session(){ try{ return JSON.parse(sessionStorage.getItem('ncrm_session')||'null') }catch(e){return null} },
+  set session(v){ if(v) sessionStorage.setItem('ncrm_session', JSON.stringify(v)); else sessionStorage.removeItem('ncrm_session'); }
+};
+
+// Bootstrap admin account if no users yet
+function ensureAdminExists(){
+  let users = AUTH.users;
+  if(!users.find(u=>u.email===ADMIN_EMAIL)){
+    users.unshift({
+      id: 'admin_0',
+      email: ADMIN_EMAIL,
+      name: 'Johann Odinsson',
+      initials: 'JO',
+      role: 'admin',
+      status: 'active',
+      password: hashPw('Opendo2026!'), // default — admin should change on first login
+      createdAt: new Date().toISOString(),
+      dataKey: 'admin_0'
+    });
+    AUTH.users = users;
+  }
+}
+
+// Simple deterministic hash (not cryptographic — for a static site without a server,
+// this is the standard approach; for production add a real backend)
+function hashPw(pw){
+  let h = 5381;
+  for(let i=0;i<pw.length;i++) h = ((h<<5)+h) ^ pw.charCodeAt(i);
+  return 'h' + (h>>>0).toString(16);
+}
+
+function authUser(email, pw){
+  return AUTH.users.find(u => u.email.toLowerCase()===email.toLowerCase() && u.password===hashPw(pw) && u.status==='active');
+}
+
+function currentUser(){ return AUTH.session; }
+function isAdmin(){ const u=currentUser(); return u&&u.role==='admin'; }
+
+// Per-user data isolation: prefix all localStorage keys with user's dataKey
+function userPrefix(){
+  const u = currentUser();
+  return u ? 'u_'+u.dataKey+'_' : 'ncrm_';
+}
+
+// Override STORE to be user-scoped
+const STORE_ORIG_GET = STORE.get.bind(STORE);
+const STORE_ORIG_SET = STORE.set.bind(STORE);
+STORE.get = function(k){ try{ return JSON.parse(localStorage.getItem(userPrefix()+k)||'null') }catch(e){return null} };
+STORE.set = function(k,v){ localStorage.setItem(userPrefix()+k, JSON.stringify(v)) };
+
+// ── LOGIN SCREEN HTML ──
+function buildLoginScreen(){
+  return `
+  <div id="auth-screen" style="position:fixed;inset:0;background:var(--canvas);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Geist',sans-serif">
+    <div style="width:100%;max-width:400px;padding:24px">
+
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:32px">
+        <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:36px;height:36px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'Geist Mono',monospace;font-weight:500;color:#fff">N</div>
+          <span style="font-family:'Fraunces',serif;font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-.02em">NordCRM</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">Log ind for at fortsætte</div>
+      </div>
+
+      <!-- Login card -->
+      <div id="auth-panel-login" style="background:var(--white);border:1px solid var(--rule);border-radius:12px;padding:24px;box-shadow:var(--sh2)">
+        <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin-bottom:4px">Log ind</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Brug din arbejds-e-mail</div>
+        <div id="auth-error" style="display:none;background:var(--red-l);border-left:3px solid var(--red);padding:8px 12px;border-radius:0 5px 5px 0;font-size:12px;color:var(--red);margin-bottom:14px"></div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px">E-mail</label>
+          <input id="login-email" type="email" placeholder="din@virksomhed.dk" style="width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:9px 11px;font-family:'Geist',sans-serif;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--rule2)'" onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()"/>
+        </div>
+        <div style="margin-bottom:18px">
+          <label style="font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px">Adgangskode</label>
+          <div style="position:relative">
+            <input id="login-pw" type="password" placeholder="••••••••••" style="width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:9px 36px 9px 11px;font-family:'Geist',sans-serif;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--rule2)'" onkeydown="if(event.key==='Enter')doLogin()"/>
+            <span onclick="togglePw('login-pw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:14px;color:var(--muted);user-select:none">👁</span>
+          </div>
+        </div>
+        <button onclick="doLogin()" style="width:100%;background:var(--ink);color:#fff;border:none;border-radius:7px;padding:10px;font-family:'Geist',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;margin-bottom:14px" onmouseover="this.style.background='var(--ink2)'" onmouseout="this.style.background='var(--ink)'">Log ind →</button>
+        <div style="text-align:center;font-size:11px;color:var(--muted)">Har du ikke adgang? <span onclick="showAuthPanel('request')" style="color:var(--blue);cursor:pointer;text-decoration:underline">Anmod om adgang</span></div>
+      </div>
+
+      <!-- Request access panel -->
+      <div id="auth-panel-request" style="display:none;background:var(--white);border:1px solid var(--rule);border-radius:12px;padding:24px;box-shadow:var(--sh2)">
+        <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin-bottom:4px">Anmod om adgang</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Din anmodning sendes til administratoren</div>
+        <div id="req-error" style="display:none;background:var(--red-l);border-left:3px solid var(--red);padding:8px 12px;border-radius:0 5px 5px 0;font-size:12px;color:var(--red);margin-bottom:14px"></div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px">Fulde navn</label>
+          <input id="req-name" type="text" placeholder="Fornavn Efternavn" style="width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:9px 11px;font-family:'Geist',sans-serif;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--rule2)'"/>
+        </div>
+        <div style="margin-bottom:18px">
+          <label style="font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px">E-mail (bruges som brugernavn)</label>
+          <input id="req-email" type="email" placeholder="din@virksomhed.dk" style="width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:9px 11px;font-family:'Geist',sans-serif;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--rule2)'"/>
+        </div>
+        <button onclick="submitAccessRequest()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:7px;padding:10px;font-family:'Geist',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;margin-bottom:14px">Send anmodning →</button>
+        <div style="text-align:center;font-size:11px;color:var(--muted)"><span onclick="showAuthPanel('login')" style="color:var(--blue);cursor:pointer;text-decoration:underline">← Tilbage til login</span></div>
+      </div>
+
+      <!-- Set password panel (first login via activation link) -->
+      <div id="auth-panel-setpw" style="display:none;background:var(--white);border:1px solid var(--rule);border-radius:12px;padding:24px;box-shadow:var(--sh2)">
+        <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin-bottom:4px">Vælg adgangskode</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Angiv en adgangskode til din konto</div>
+        <div id="setpw-error" style="display:none;background:var(--red-l);border-left:3px solid var(--red);padding:8px 12px;border-radius:0 5px 5px 0;font-size:12px;color:var(--red);margin-bottom:14px"></div>
+        <input type="hidden" id="setpw-token"/>
+        <div style="margin-bottom:12px">
+          <label style="font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px">Ny adgangskode</label>
+          <input id="setpw-1" type="password" placeholder="Minimum 6 tegn" style="width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:9px 11px;font-family:'Geist',sans-serif;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--rule2)'"/>
+        </div>
+        <div style="margin-bottom:18px">
+          <label style="font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px">Gentag adgangskode</label>
+          <input id="setpw-2" type="password" placeholder="••••••••••" style="width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:9px 11px;font-family:'Geist',sans-serif;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--rule2)'" onkeydown="if(event.key==='Enter')doSetPassword()"/>
+        </div>
+        <button onclick="doSetPassword()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:7px;padding:10px;font-family:'Geist',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Aktiver konto →</button>
+      </div>
+
+      <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:20px">NordCRM · Fortroligt system · Kun autoriserede brugere</div>
+    </div>
+  </div>`;
+}
+
+function showAuthPanel(which){
+  ['login','request','setpw'].forEach(p=>{
+    const el=document.getElementById('auth-panel-'+p);
+    if(el) el.style.display = p===which ? 'block' : 'none';
+  });
+}
+
+function togglePw(inputId, btn){
+  const inp=document.getElementById(inputId);
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+function setAuthError(panelId, msg){
+  const el=document.getElementById(panelId);
+  if(el){ el.style.display='block'; el.textContent=msg; }
+}
+function clearAuthError(panelId){ const el=document.getElementById(panelId); if(el) el.style.display='none'; }
+
+function doLogin(){
+  clearAuthError('auth-error');
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  if(!email||!pw){ setAuthError('auth-error','Udfyld e-mail og adgangskode'); return; }
+  const user=authUser(email, pw);
+  if(!user){
+    // Check if exists but pending
+    const pending=AUTH.users.find(u=>u.email.toLowerCase()===email.toLowerCase()&&u.status==='pending');
+    if(pending) setAuthError('auth-error','Din konto afventer aktivering af administrator');
+    else setAuthError('auth-error','Forkert e-mail eller adgangskode');
+    return;
+  }
+  AUTH.session = { id:user.id, email:user.email, name:user.name, initials:user.initials||initials(user.name), role:user.role, dataKey:user.dataKey };
+  launchApp();
+}
+
+function submitAccessRequest(){
+  clearAuthError('req-error');
+  const name=document.getElementById('req-name').value.trim();
+  const email=document.getElementById('req-email').value.trim();
+  if(!name){ setAuthError('req-error','Indtast dit navn'); return; }
+  if(!email||!email.includes('@')){ setAuthError('req-error','Ugyldig e-mail'); return; }
+
+  let users=AUTH.users;
+  if(users.find(u=>u.email.toLowerCase()===email.toLowerCase())){
+    setAuthError('req-error','Denne e-mail er allerede registreret. Prøv at logge ind.');
+    return;
+  }
+
+  const newUser={
+    id: 'u_'+Math.random().toString(36).slice(2,10),
+    email, name,
+    initials: initials(name),
+    role: 'user',
+    status: 'pending',
+    password: null,
+    createdAt: new Date().toISOString(),
+    dataKey: 'u_'+Math.random().toString(36).slice(2,10)
+  };
+  users.push(newUser);
+  AUTH.users=users;
+
+  // Open mailto to admin
+  const subject=encodeURIComponent('NordCRM — Adgangsanmodning: '+name);
+  const appUrl=window.location.href.split('?')[0];
+  const activateUrl=appUrl+'?activate='+encodeURIComponent(newUser.id);
+  const body=encodeURIComponent(
+    'En ny bruger har anmodet om adgang til NordCRM:\n\n'+
+    'Navn: '+name+'\n'+
+    'E-mail: '+email+'\n'+
+    'Tidspunkt: '+new Date().toLocaleString('da-DK')+'\n\n'+
+    '──────────────────────────────\n'+
+    'Aktiver denne bruger ved at klikke på linket herunder:\n\n'+
+    activateUrl+'\n\n'+
+    '──────────────────────────────\n'+
+    'Du kan også aktivere brugeren via Admin-panelet i NordCRM.\n\n'+
+    'Venlig hilsen\nNordCRM System'
+  );
+  window.location.href='mailto:'+ADMIN_EMAIL+'?subject='+subject+'&body='+body;
+
+  // Show confirmation
+  const panel=document.getElementById('auth-panel-request');
+  panel.innerHTML=`
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-size:40px;margin-bottom:12px">✉️</div>
+      <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin-bottom:8px;color:var(--green)">Anmodning sendt!</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">Din anmodning er registreret og en e-mail er åbnet til administratoren.<br>Du får besked når din konto er aktiveret.</div>
+      <div style="font-size:11px;color:var(--muted)">Allerede aktiveret? <span onclick="showAuthPanel('login')" style="color:var(--blue);cursor:pointer;text-decoration:underline">Log ind her</span></div>
+    </div>`;
+}
+
+// ── ACTIVATION FLOW ──
+function checkActivationParam(){
+  const params=new URLSearchParams(window.location.search);
+  const userId=params.get('activate');
+  if(!userId) return false;
+
+  // Remove param from URL without reload
+  window.history.replaceState({},document.title, window.location.pathname);
+
+  const users=AUTH.users;
+  const user=users.find(u=>u.id===userId);
+  if(!user){ return false; }
+
+  if(user.status==='active'){
+    // Already active — show login with pre-filled email
+    document.getElementById('login-email').value=user.email;
+    document.getElementById('login-pw').focus();
+    return true;
+  }
+
+  // Show set-password panel
+  document.getElementById('setpw-token').value=userId;
+  showAuthPanel('setpw');
+  return true;
+}
+
+function doSetPassword(){
+  clearAuthError('setpw-error');
+  const pw1=document.getElementById('setpw-1').value;
+  const pw2=document.getElementById('setpw-2').value;
+  const userId=document.getElementById('setpw-token').value;
+  if(pw1.length<6){ setAuthError('setpw-error','Adgangskoden skal være mindst 6 tegn'); return; }
+  if(pw1!==pw2){ setAuthError('setpw-error','Adgangskoderne er ikke ens'); return; }
+
+  let users=AUTH.users;
+  const idx=users.findIndex(u=>u.id===userId);
+  if(idx<0){ setAuthError('setpw-error','Ugyldigt aktiveringslink'); return; }
+  users[idx].password=hashPw(pw1);
+  users[idx].status='active';
+  AUTH.users=users;
+
+  // Auto-login
+  const user=users[idx];
+  AUTH.session={ id:user.id, email:user.email, name:user.name, initials:user.initials||initials(user.name), role:user.role, dataKey:user.dataKey };
+  launchApp();
+  toast('ok','Konto aktiveret!','Velkommen til NordCRM, '+user.name.split(' ')[0]+'!');
+}
+
+// ── LAUNCH APP ──
+function launchApp(){
+  const authScreen=document.getElementById('auth-screen');
+  if(authScreen) authScreen.remove();
+  const appEl=document.getElementById('app');
+  if(appEl) appEl.style.display='';
+
+  // Reload state for this user
+  state.deals     = STORE.get('deals')      || [];
+  state.customers = STORE.get('customers')  || [];
+  state.activities= STORE.get('activities') || [];
+  state.settings  = STORE.get('settings')   || { name: currentUser().name, initials: currentUser().initials, role:'', email: currentUser().email };
+
+  // If user has no customers yet, seed demo for first-time users who are NOT admin
+  // Admin already has demo from first load; other users get a clean slate unless they want demo
+  if(!state.customers.length && currentUser().id !== 'admin_0'){
+    // clean slate for new users
+  }
+
+  // Update topbar
+  const u=currentUser();
+  const av=document.getElementById('userAvatar');
+  if(av) av.textContent=u.initials||'?';
+  document.title='NordCRM — '+u.name;
+
+  // Add admin menu item if admin
+  if(isAdmin()){
+    const nav=document.getElementById('nav-admin');
+    if(nav) nav.style.display='flex';
+    const sbAdmin=document.getElementById('sb-admin-section');
+    if(sbAdmin) sbAdmin.style.display='';
+  }
+
   renderDashboard();
   goView('dashboard');
   setSidebarActive('');
-  // fade-in animation
+
   const s=document.createElement('style');
   s.textContent='@keyframes fadeIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}';
   document.head.appendChild(s);
 }
 
+// ── LOGOUT ──
+function doLogout(){
+  AUTH.session=null;
+  state={deals:[],customers:[],activities:[],settings:{name:'',initials:'',role:'',email:''},selectedDeal:null,selectedCustomer:null,pipelineFilter:'all'};
+  location.reload();
+}
+
+// ── ADMIN PANEL ──
+function openAdminPanel(){
+  if(!isAdmin()){ toast('err','Adgang nægtet','Kun administratorer'); return; }
+  renderAdminPanel();
+  document.getElementById('admin-modal').classList.add('open');
+}
+
+function renderAdminPanel(){
+  const users=AUTH.users;
+  const tbody=document.getElementById('admin-users-tbody');
+  tbody.innerHTML=users.map(u=>`
+    <tr>
+      <td style="font-weight:500">${u.name}</td>
+      <td style="font-family:'Geist Mono',monospace;font-size:11px">${u.email}</td>
+      <td>${u.role==='admin'?'<span style="color:var(--purple);font-size:10px;font-weight:600">ADMIN</span>':'<span style="color:var(--muted);font-size:10px">Bruger</span>'}</td>
+      <td>
+        ${u.status==='active'
+          ?'<span style="color:var(--green);font-size:10px;font-weight:500">● Aktiv</span>'
+          :'<span style="color:var(--amber);font-size:10px;font-weight:500">⏳ Afventer</span>'}
+      </td>
+      <td style="text-align:right">
+        ${u.status==='pending'?`<button onclick="adminActivateUser('${u.id}')" class="btn btn-green btn-xs" style="margin-right:4px">Aktivér</button>`:''}
+        ${u.id!=='admin_0'?`<button onclick="adminSendActivation('${u.id}')" class="btn btn-ghost btn-xs" style="margin-right:4px" title="Send aktiveringslink">✉</button>`:''}
+        ${u.id!==currentUser().id?`<button onclick="adminDeleteUser('${u.id}')" class="btn btn-xs" style="color:var(--red);border:1px solid var(--red-m);background:var(--red-l)" title="Slet bruger">✕</button>`:''}
+      </td>
+    </tr>`).join('');
+  document.getElementById('admin-user-count').textContent=users.filter(u=>u.status==='active').length+' aktive';
+  document.getElementById('admin-pending-count').textContent=users.filter(u=>u.status==='pending').length+' afventer';
+}
+
+function adminActivateUser(userId){
+  let users=AUTH.users;
+  const idx=users.findIndex(u=>u.id===userId);
+  if(idx<0) return;
+
+  // Generate a temporary password and mark active so they can use the activation link
+  users[idx].status='active_pending_pw'; // will be shown as "afventer" until they set pw
+  AUTH.users=users;
+
+  adminSendActivation(userId);
+  toast('ok','Aktiveringslink sendt','Brugeren kan nu oprette adgangskode');
+  renderAdminPanel();
+}
+
+function adminSendActivation(userId){
+  const users=AUTH.users;
+  const user=users.find(u=>u.id===userId);
+  if(!user) return;
+
+  const appUrl=window.location.href.split('?')[0];
+  const activateUrl=appUrl+'?activate='+encodeURIComponent(user.id);
+  const subject=encodeURIComponent('Din adgang til NordCRM');
+  const body=encodeURIComponent(
+    'Hej '+user.name+',\n\n'+
+    'Du har fået adgang til NordCRM.\n\n'+
+    'Klik på linket herunder for at aktivere din konto og vælge en adgangskode:\n\n'+
+    activateUrl+'\n\n'+
+    'Dit brugernavn er: '+user.email+'\n\n'+
+    'Linket er personligt og må ikke deles.\n\n'+
+    'Venlig hilsen\nJohann Odinsson\nNordCRM Administrator'
+  );
+  window.open('mailto:'+user.email+'?subject='+subject+'&body='+body);
+  toast('ok','E-mail åbnet','Aktiveringsmail til '+user.email);
+}
+
+function adminAddUserManually(){
+  const name=document.getElementById('admin-new-name').value.trim();
+  const email=document.getElementById('admin-new-email').value.trim();
+  const role=document.getElementById('admin-new-role').value;
+  if(!name||!email){ toast('err','Mangler data','Navn og e-mail kræves'); return; }
+  let users=AUTH.users;
+  if(users.find(u=>u.email.toLowerCase()===email.toLowerCase())){ toast('err','Allerede oprettet','Denne e-mail findes allerede'); return; }
+  const newUser={
+    id:'u_'+Math.random().toString(36).slice(2,10),
+    email, name, initials:initials(name), role, status:'pending',
+    password:null, createdAt:new Date().toISOString(),
+    dataKey:'u_'+Math.random().toString(36).slice(2,10)
+  };
+  users.push(newUser);
+  AUTH.users=users;
+  document.getElementById('admin-new-name').value='';
+  document.getElementById('admin-new-email').value='';
+  adminSendActivation(newUser.id);
+  renderAdminPanel();
+  toast('ok','Bruger oprettet','Aktiveringslink sendt til '+email);
+}
+
+function adminDeleteUser(userId){
+  showConfirm('Slet bruger?','Brugeren mister adgang til NordCRM. Deres data bevares.',()=>{
+    let users=AUTH.users;
+    AUTH.users=users.filter(u=>u.id!==userId);
+    renderAdminPanel();
+    toast('info','Bruger slettet','');
+  });
+}
+
+// ─── CHANGE PASSWORD ───
+function openChangePassword(){
+  document.getElementById('chpw-old').value='';
+  document.getElementById('chpw-new1').value='';
+  document.getElementById('chpw-new2').value='';
+  document.getElementById('chpw-error').style.display='none';
+  document.getElementById('changepw-modal').classList.add('open');
+}
+
+function saveChangePassword(){
+  const oldPw=document.getElementById('chpw-old').value;
+  const new1=document.getElementById('chpw-new1').value;
+  const new2=document.getElementById('chpw-new2').value;
+  const errEl=document.getElementById('chpw-error');
+  const show=msg=>{ errEl.style.display='block'; errEl.textContent=msg; };
+  errEl.style.display='none';
+  const u=currentUser();
+  const users=AUTH.users;
+  const idx=users.findIndex(x=>x.id===u.id);
+  if(idx<0){ show('Brugerfejl'); return; }
+  if(users[idx].password!==hashPw(oldPw)){ show('Forkert nuværende adgangskode'); return; }
+  if(new1.length<6){ show('Ny adgangskode skal være mindst 6 tegn'); return; }
+  if(new1!==new2){ show('Adgangskoderne er ikke ens'); return; }
+  users[idx].password=hashPw(new1);
+  AUTH.users=users;
+  closeModal('changepw-modal');
+  toast('ok','Adgangskode ændret','Du er fortsat logget ind');
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+function init(){
+  ensureAdminExists();
+
+  // Hide app until authenticated
+  const appEl=document.getElementById('app');
+  if(appEl) appEl.style.display='none';
+
+  // Inject auth screen
+  document.body.insertAdjacentHTML('afterbegin', buildLoginScreen());
+
+  // Check activation token in URL
+  checkActivationParam();
+
+  // If already have a valid session, launch immediately
+  const sess=AUTH.session;
+  if(sess && AUTH.users.find(u=>u.id===sess.id&&u.status==='active')){
+    launchApp();
+  }
+
+  // Update avatar on user profile clicks
+  document.getElementById('userAvatar').addEventListener('click', openUserMenu);
+}
+
+function openUserMenu(){
+  const u=currentUser();
+  if(!u) return;
+  // Show a mini menu
+  const existing=document.getElementById('user-menu-popup');
+  if(existing){ existing.remove(); return; }
+
+  const av=document.getElementById('userAvatar');
+  const rect=av.getBoundingClientRect();
+  const menu=document.createElement('div');
+  menu.id='user-menu-popup';
+  menu.style.cssText=`position:fixed;top:${rect.bottom+6}px;right:${window.innerWidth-rect.right}px;background:var(--white);border:1px solid var(--rule);border-radius:9px;box-shadow:var(--sh3);z-index:999;min-width:200px;overflow:hidden;font-family:'Geist',sans-serif`;
+  menu.innerHTML=`
+    <div style="padding:12px 14px 10px;border-bottom:1px solid var(--rule)">
+      <div style="font-weight:600;font-size:13px">${u.name}</div>
+      <div style="font-size:11px;color:var(--muted)">${u.email}</div>
+      ${isAdmin()?'<div style="font-size:9px;font-family:\'Geist Mono\',monospace;color:var(--purple);margin-top:3px;letter-spacing:.06em">ADMINISTRATOR</div>':''}
+    </div>
+    ${isAdmin()?`<div onclick="openAdminPanel();document.getElementById('user-menu-popup').remove()" style="padding:9px 14px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">👥 <span>Brugeradministration</span></div>`:''}
+    <div onclick="openSettings();document.getElementById('user-menu-popup').remove()" style="padding:9px 14px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">⚙ <span>Indstillinger</span></div>
+    <div onclick="openChangePassword();document.getElementById('user-menu-popup').remove()" style="padding:9px 14px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">🔑 <span>Skift adgangskode</span></div>
+    <div style="height:1px;background:var(--rule)"></div>
+    <div onclick="doLogout()" style="padding:9px 14px;cursor:pointer;font-size:12.5px;color:var(--red);display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background='var(--red-l)'" onmouseout="this.style.background=''">↩ <span>Log ud</span></div>
+  `;
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',function rm(e){ if(!menu.contains(e.target)&&e.target.id!=='userAvatar'){ menu.remove(); document.removeEventListener('click',rm); }},{once:false}),50);
+}
+
 init();
 </script>
+
+<!-- ADMIN PANEL MODAL -->
+<div class="overlay" id="admin-modal">
+  <div class="modal" style="width:680px;max-width:calc(100vw - 32px)">
+    <div class="modal-head">
+      <div><div class="modal-title">👥 Brugeradministration</div><div class="modal-sub" id="admin-user-count"></div></div>
+      <button class="modal-close" onclick="closeModal('admin-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Add user -->
+      <div style="background:var(--blue-l);border:1px solid var(--blue-m);border-radius:8px;padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:10px;font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase">＋ Tilføj ny bruger</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:end">
+          <div>
+            <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px;font-family:'Geist Mono',monospace;letter-spacing:.05em;text-transform:uppercase">Navn</label>
+            <input class="form-input" id="admin-new-name" placeholder="Fulde navn" style="font-size:12px"/>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px;font-family:'Geist Mono',monospace;letter-spacing:.05em;text-transform:uppercase">E-mail (brugernavn)</label>
+            <input class="form-input" id="admin-new-email" type="email" placeholder="bruger@virksomhed.dk" style="font-size:12px"/>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px;font-family:'Geist Mono',monospace;letter-spacing:.05em;text-transform:uppercase">Rolle</label>
+            <select class="form-select" id="admin-new-role" style="font-size:12px;padding:8px 24px 8px 8px">
+              <option value="user">Bruger</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button class="btn btn-blue" onclick="adminAddUserManually()" style="white-space:nowrap">Opret & send link</button>
+        </div>
+      </div>
+      <!-- Pending notice -->
+      <div id="admin-pending-count" style="font-size:11px;color:var(--amber);font-weight:500;margin-bottom:8px"></div>
+      <!-- Users table -->
+      <table class="data-table">
+        <thead><tr><th>Navn</th><th>E-mail</th><th>Rolle</th><th>Status</th><th style="text-align:right">Handlinger</th></tr></thead>
+        <tbody id="admin-users-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('admin-modal')">Luk</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="overlay" id="changepw-modal">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <div><div class="modal-title">🔑 Skift adgangskode</div></div>
+      <button class="modal-close" onclick="closeModal('changepw-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="chpw-error" style="display:none;background:var(--red-l);border-left:3px solid var(--red);padding:8px 12px;border-radius:0 5px 5px 0;font-size:12px;color:var(--red);margin-bottom:14px"></div>
+      <div class="form-group">
+        <label class="form-label">Nuværende adgangskode</label>
+        <input class="form-input" id="chpw-old" type="password" placeholder="••••••••"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ny adgangskode</label>
+        <input class="form-input" id="chpw-new1" type="password" placeholder="Minimum 6 tegn"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gentag ny adgangskode</label>
+        <input class="form-input" id="chpw-new2" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')saveChangePassword()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('changepw-modal')">Annuller</button>
+      <button class="btn btn-primary" onclick="saveChangePassword()">💾 Gem ny adgangskode</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
