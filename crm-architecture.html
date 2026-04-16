@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud CRM Architecture — M365 & Stacc</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161b2a;
+    --border: #1e2640;
+    --accent: #3b6fff;
+    --accent2: #00d4a0;
+    --accent3: #ff6b35;
+    --accent4: #a855f7;
+    --text: #e8eaf0;
+    --muted: #5a6180;
+    --tag: #1a2240;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,111,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,111,255,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    padding: 64px 0 48px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 56px;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  h1 span.hl { color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 560px;
+    line-height: 1.7;
+  }
+
+  .badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .badge-blue { background: rgba(59,111,255,0.15); color: var(--accent); border: 1px solid rgba(59,111,255,0.3); }
+  .badge-green { background: rgba(0,212,160,0.12); color: var(--accent2); border: 1px solid rgba(0,212,160,0.25); }
+  .badge-orange { background: rgba(255,107,53,0.12); color: var(--accent3); border: 1px solid rgba(255,107,53,0.25); }
+  .badge-purple { background: rgba(168,85,247,0.12); color: var(--accent4); border: 1px solid rgba(168,85,247,0.25); }
+
+  /* SECTION TITLES */
+  .section {
+    margin-bottom: 48px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section:nth-child(2) { animation-delay: 0.05s; }
+  .section:nth-child(3) { animation-delay: 0.1s; }
+  .section:nth-child(4) { animation-delay: 0.15s; }
+  .section:nth-child(5) { animation-delay: 0.2s; }
+  .section:nth-child(6) { animation-delay: 0.25s; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 28px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ARCH DIAGRAM */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    overflow: hidden;
+  }
+
+  .arch-layer {
+    margin-bottom: 8px;
+  }
+
+  .layer-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .layer-boxes {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .box {
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    position: relative;
+    cursor: default;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .box-blue { background: rgba(59,111,255,0.12); border: 1px solid rgba(59,111,255,0.3); color: #8aabff; }
+  .box-green { background: rgba(0,212,160,0.1); border: 1px solid rgba(0,212,160,0.25); color: #4de8c2; }
+  .box-orange { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.25); color: #ff9a78; }
+  .box-purple { background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); color: #c084fc; }
+  .box-gray { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); }
+
+  .box .box-icon { font-size: 18px; margin-bottom: 4px; display: block; }
+  .box .box-name { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .box .box-sub { display: block; font-size: 10px; opacity: 0.6; margin-top: 2px; }
+
+  .connector-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 20px;
+    gap: 8px;
+    margin: 0 0 8px;
+  }
+
+  .connector-line {
+    width: 2px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 auto;
+  }
+
+  /* CARDS GRID */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: rgba(59,111,255,0.4); }
+
+  .card-icon {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .tag {
+    background: var(--tag);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* INTEGRATION TABLE */
+  .int-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .int-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .int-header {
+    padding: 14px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .int-header.m365 { background: rgba(0,120,212,0.12); }
+  .int-header.stacc { background: rgba(0,212,160,0.08); }
+
+  .int-list { padding: 12px 0; }
+
+  .int-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 20px;
+    border-bottom: 1px solid rgba(30,38,64,0.5);
+    transition: background 0.15s;
+  }
+
+  .int-item:last-child { border-bottom: none; }
+  .int-item:hover { background: rgba(255,255,255,0.02); }
+
+  .int-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .int-text strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+
+  .int-text span {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* PHASES */
+  .phases {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .phase {
+    padding: 20px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    transition: background 0.2s;
+  }
+
+  .phase:last-child { border-right: none; }
+  .phase:hover { background: var(--surface2); }
+
+  .phase-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .phase-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .phase-dur {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  .phase-items {
+    list-style: none;
+  }
+
+  .phase-items li {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 3px 0;
+    padding-left: 12px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .phase-items li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* STACK TABLE */
+  .stack-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .stack-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stack-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(30,38,64,0.6);
+    vertical-align: top;
+  }
+
+  .stack-table tr:last-child td { border-bottom: none; }
+  .stack-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .stack-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent);
+    font-size: 11px;
+    white-space: nowrap;
+    width: 140px;
+  }
+
+  .stack-table td:nth-child(2) { font-weight: 500; color: var(--text); }
+  .stack-table td:nth-child(3) { color: var(--muted); }
+
+  .stack-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  /* SECURITY */
+  .sec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .sec-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .sec-icon { font-size: 20px; margin-bottom: 8px; }
+  .sec-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .sec-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+  /* FOOTER */
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  footer .fl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
+  footer .fr { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
+
+  @media (max-width: 680px) {
+    .int-grid, .phases { grid-template-columns: 1fr; }
+    .phases { border-radius: 10px; }
+    .phase { border-right: none; border-bottom: 1px solid var(--border); }
+    .phase:last-child { border-bottom: none; }
+    .sec-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="eyebrow">// Cloud Architecture Blueprint</div>
+    <h1>Enterprise <span class="hl">CRM</span> Platform<br>Architecture Plan</h1>
+    <p class="subtitle">A scalable, cloud-native CRM solution with native Microsoft 365 and Stacc open banking integrations — covering sales, support, and marketing.</p>
+    <div class="badges">
+      <span class="badge badge-blue">Cloud-Native</span>
+      <span class="badge badge-green">M365 Integrated</span>
+      <span class="badge badge-orange">Stacc Connected</span>
+      <span class="badge badge-purple">Multi-Module CRM</span>
+    </div>
+  </header>
+
+  <!-- 1. ARCHITECTURE OVERVIEW -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">System Architecture Overview</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="arch-diagram">
+      <!-- Layer: Clients -->
+      <div class="arch-layer">
+        <div class="layer-label">Frontend Clients</div>
+        <div class="layer-boxes">
+          <div class="box box-blue"><span class="box-icon">🌐</span><span class="box-name">Web App</span><span class="box-sub">React / Next.js</span></div>
+          <div class="box box-blue"><span class="box-icon">📱</span><span class="box-name">Mobile App</span><span class="box-sub">React Native</span></div>
+          <div class="box box-blue"><span class="box-icon">🔌</span><span class="box-name">Teams Add-in</span><span class="box-sub">M365 / Outlook</span></div>
+          <div class="box box-blue"><span class="box-icon">🤖</span><span class="box-name">Copilot Bot</span><span class="box-sub">Azure Bot Framework</span></div>
+        </div>
+      </div>
+      <div class="connector-row"><div class="connector-line"></div></div>
+
+      <!-- Layer: API Gateway -->
+      <div class="arch-layer">
+        <div class="layer-label">API Layer</div>
+        <div class="layer-boxes">
+          <div class="box box-orange" style="flex:2"><span class="box-icon">🔀</span><span class="box-name">Azure API Management</span><span class="box-sub">Auth · Rate Limit · Versioning</span></div>
+          <div class="box box-orange"><span class="box-icon">🛡️</span><span class="box-name">Azure AD / Entra ID</span><span class="box-sub">OAuth 2.0 · MSAL</span></div>
+        </div>
+      </div>
+      <div class="connector-row"><div class="connector-line"></div></div>
+
+      <!-- Layer: Core Services -->
+      <div class="arch-layer">
+        <div class="layer-label">Core Microservices (Azure Container Apps)</div>
+        <div class="layer-boxes">
+          <div class="box box-green"><span class="box-icon">📊</span><span class="box-name">Sales Service</span><span class="box-sub">Pipeline · Deals</span></div>
+          <div class="box box-green"><span class="box-icon">🎧</span><span class="box-name">Support Service</span><span class="box-sub">Tickets · SLA</span></div>
+          <div class="box box-green"><span class="box-icon">📣</span><span class="box-name">Marketing Service</span><span class="box-sub">Campaigns · Leads</span></div>
+          <div class="box box-green"><span class="box-icon">👥</span><span class="box-name">Contact Service</span><span class="box-sub">Customers · Orgs</span></div>
+          <div class="box box-green"><span class="box-icon">📈</span><span class="box-name">Analytics Service</span><span class="box-sub">BI · Reports</span></div>
+        </div>
+      </div>
+      <div class="connector-row"><div class="connector-line"></div></div>
+
+      <!-- Layer: Integration -->
+      <div class="arch-layer">
+        <div class="layer-label">Integration Layer (Azure Integration Services)</div>
+        <div class="layer-boxes">
+          <div class="box box-purple"><span class="box-icon">📧</span><span class="box-name">M365 Connector</span><span class="box-sub">Graph API</span></div>
+          <div class="box box-purple"><span class="box-icon">🏦</span><span class="box-name">Stacc Connector</span><span class="box-sub">Open Banking API</span></div>
+          <div class="box box-purple"><span class="box-icon">⚡</span><span class="box-name">Event Bus</span><span class="box-sub">Azure Service Bus</span></div>
+          <div class="box box-purple"><span class="box-icon">🔗</span><span class="box-name">Logic Apps</span><span class="box-sub">Workflow Automation</span></div>
+        </div>
+      </div>
+      <div class="connector-row"><div class="connector-line"></div></div>
+
+      <!-- Layer: Data -->
+      <div class="arch-layer">
+        <div class="layer-label">Data Layer</div>
+        <div class="layer-boxes">
+          <div class="box box-gray"><span class="box-icon">🗄️</span><span class="box-name">Azure Cosmos DB</span><span class="box-sub">Primary CRM Data</span></div>
+          <div class="box box-gray"><span class="box-icon">🔍</span><span class="box-name">Azure AI Search</span><span class="box-sub">Full-text Search</span></div>
+          <div class="box box-gray"><span class="box-icon">📦</span><span class="box-name">Azure Blob Storage</span><span class="box-sub">Files · Attachments</span></div>
+          <div class="box box-gray"><span class="box-icon">⚡</span><span class="box-name">Redis Cache</span><span class="box-sub">Sessions · Hot Data</span></div>
+          <div class="box box-gray"><span class="box-icon">📊</span><span class="box-name">Azure Synapse</span><span class="box-sub">Analytics DWH</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. CORE MODULES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Core CRM Modules</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Sales Pipeline</div>
+        <div class="card-desc">Kanban-style deal management with stages, probability scoring, forecasting, and activity tracking. Syncs with Outlook calendar & Teams meetings.</div>
+        <div class="card-tags"><span class="tag">Deals</span><span class="tag">Forecasting</span><span class="tag">Quotes</span><span class="tag">E-sign</span></div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎧</div>
+        <div class="card-title">Customer Support</div>
+        <div class="card-desc">Multi-channel ticketing (email, Teams, web). SLA tracking, escalation rules, knowledge base, and AI-assisted response suggestions.</div>
+        <div class="card-tags"><span class="tag">Tickets</span><span class="tag">SLA</span><span class="tag">KB</span><span class="tag">AI Assist</span></div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📣</div>
+        <div class="card-title">Marketing & Leads</div>
+        <div class="card-desc">Lead capture, scoring, nurturing campaigns, segmentation, email/SMS campaigns with A/B testing and conversion attribution.</div>
+        <div class="card-tags"><span class="tag">Lead Score</span><span class="tag">Campaigns</span><span class="tag">Segments</span><span class="tag">Attribution</span></div>
+      </div>
+      <div class="card">
+        <div class="card-icon">👥</div>
+        <div class="card-title">Contact & Account 360</div>
+        <div class="card-desc">Unified contact profiles with full interaction history, financial data from Stacc, org hierarchy, and relationship mapping.</div>
+        <div class="card-tags"><span class="tag">360 View</span><span class="tag">Org Chart</span><span class="tag">Timeline</span><span class="tag">Enrichment</span></div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Analytics & BI</div>
+        <div class="card-desc">Real-time dashboards, custom reports, Power BI embedded reports, revenue forecasting, and cohort analysis synced with Azure Synapse.</div>
+        <div class="card-tags"><span class="tag">Power BI</span><span class="tag">Dashboards</span><span class="tag">Forecasting</span></div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚙️</div>
+        <div class="card-title">Workflow Automation</div>
+        <div class="card-desc">No-code automation builder using Azure Logic Apps. Trigger actions across M365, Stacc, and CRM events. Custom approval flows and notifications.</div>
+        <div class="card-tags"><span class="tag">Logic Apps</span><span class="tag">No-code</span><span class="tag">Triggers</span><span class="tag">Approval</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. INTEGRATIONS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Key Integrations</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="int-grid">
+      <div class="int-block">
+        <div class="int-header m365">🟦 Microsoft 365 Integration</div>
+        <div class="int-list">
+          <div class="int-item">
+            <div class="int-dot" style="background:#0078d4"></div>
+            <div class="int-text"><strong>Outlook & Exchange</strong><span>Email sync, calendar events, contact sync via Microsoft Graph API</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#464eb8"></div>
+            <div class="int-text"><strong>Microsoft Teams</strong><span>CRM sidebar tab, deal notifications, meeting auto-logging, Copilot bot</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#d83b01"></div>
+            <div class="int-text"><strong>SharePoint & OneDrive</strong><span>Document storage per deal/contact, file collaboration, version control</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#217346"></div>
+            <div class="int-text"><strong>Excel & Power BI</strong><span>Embedded dashboards, data export, live data refresh, custom reports</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#742774"></div>
+            <div class="int-text"><strong>Azure AD / Entra ID</strong><span>SSO, RBAC, conditional access, MFA, directory sync</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#0078d4"></div>
+            <div class="int-text"><strong>Power Automate</strong><span>Cross-platform automation flows triggered by CRM events</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="int-block">
+        <div class="int-header stacc">🟢 Stacc Integration</div>
+        <div class="int-list">
+          <div class="int-item">
+            <div class="int-dot" style="background:#00d4a0"></div>
+            <div class="int-text"><strong>Open Banking Data</strong><span>Real-time financial health of customers — transactions, accounts, balances</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#00d4a0"></div>
+            <div class="int-text"><strong>Credit & Risk Scoring</strong><span>Stacc credit data surfaced directly on contact & deal records</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#00b388"></div>
+            <div class="int-text"><strong>Payment Tracking</strong><span>Invoice status, overdue payments, and payment history in contact 360 view</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#00b388"></div>
+            <div class="int-text"><strong>Loan & Product Data</strong><span>Active financial products per customer, renewal triggers, upsell signals</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#009e7a"></div>
+            <div class="int-text"><strong>Stacc Xchange</strong><span>Webhook events from Stacc pushed into CRM via Azure Service Bus</span></div>
+          </div>
+          <div class="int-item">
+            <div class="int-dot" style="background:#009e7a"></div>
+            <div class="int-text"><strong>KYC / Compliance</strong><span>Customer onboarding data, AML flags, and compliance status surfaced in CRM</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. TECH STACK -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Recommended Tech Stack</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="stack-wrap">
+      <table class="stack-table">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Technology</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Frontend</td><td>Next.js 14 + React + Fluent UI v9</td><td>M365-native design system, SSR for performance, great Teams compatibility</td></tr>
+          <tr><td>Mobile</td><td>React Native + MSAL</td><td>Cross-platform, reuses web logic, native M365 auth</td></tr>
+          <tr><td>API Gateway</td><td>Azure API Management</td><td>Rate limiting, auth, versioning, monitoring built-in</td></tr>
+          <tr><td>Backend</td><td>Node.js (TypeScript) + .NET 8</td><td>Node for API services, .NET for heavy integrations; both Azure-native</td></tr>
+          <tr><td>Containers</td><td>Azure Container Apps (ACA)</td><td>Serverless containers, auto-scale, no k8s ops overhead</td></tr>
+          <tr><td>Primary DB</td><td>Azure Cosmos DB (NoSQL)</td><td>Flexible schema for CRM entities, global distribution, 99.999% SLA</td></tr>
+          <tr><td>Search</td><td>Azure AI Search</td><td>Full-text + vector search across contacts, deals, notes</td></tr>
+          <tr><td>Identity</td><td>Microsoft Entra ID (AAD)</td><td>M365 SSO, RBAC, Conditional Access, native Graph API</td></tr>
+          <tr><td>Messaging</td><td>Azure Service Bus</td><td>Reliable async messaging between microservices and Stacc webhooks</td></tr>
+          <tr><td>Analytics</td><td>Azure Synapse + Power BI Embedded</td><td>Embedded BI directly in CRM UI with live M365 data</td></tr>
+          <tr><td>Automation</td><td>Azure Logic Apps</td><td>No-code workflow builder, 400+ connectors including M365 and Stacc</td></tr>
+          <tr><td>AI Features</td><td>Azure OpenAI (GPT-4o)</td><td>Meeting summaries, email drafting, lead scoring, ticket suggestions</td></tr>
+          <tr><td>CI/CD</td><td>GitHub Actions + Azure DevOps</td><td>Full pipeline with M365 compliance gates</td></tr>
+          <tr><td>Monitoring</td><td>Azure Monitor + App Insights</td><td>End-to-end observability, alerts, dashboards</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 5. SECURITY -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Security & Compliance</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="sec-grid">
+      <div class="sec-item">
+        <div class="sec-icon">🔐</div>
+        <div class="sec-title">Identity & Access</div>
+        <div class="sec-desc">Azure Entra ID with MFA, Conditional Access policies, RBAC per CRM module, and PIM for privileged roles.</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">🔒</div>
+        <div class="sec-title">Data Encryption</div>
+        <div class="sec-desc">TLS 1.3 in transit, AES-256 at rest. Azure Key Vault for secrets and certificates management.</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">🇪🇺</div>
+        <div class="sec-title">GDPR Compliance</div>
+        <div class="sec-desc">Data residency in EU regions, right-to-erasure workflows, consent tracking, and audit logs for all PII access.</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">🏦</div>
+        <div class="sec-title">Financial Data (Stacc)</div>
+        <div class="sec-desc">PSD2 / Open Banking compliant data handling. Stacc data isolated per tenant, with field-level encryption on financial records.</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">🕵️</div>
+        <div class="sec-title">Audit & Monitoring</div>
+        <div class="sec-desc">Full audit trail in Azure Monitor. Microsoft Sentinel SIEM integration. Real-time anomaly detection and alerting.</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">🏢</div>
+        <div class="sec-title">Multi-tenancy</div>
+        <div class="sec-desc">Tenant isolation at data and API level. Each org gets isolated Cosmos DB container with dedicated throughput.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. DELIVERY PHASES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Delivery Phases</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-num">PHASE 01</div>
+        <div class="phase-title">Foundation</div>
+        <div class="phase-dur badge badge-blue">Weeks 1–6</div>
+        <ul class="phase-items">
+          <li>Azure infrastructure setup</li>
+          <li>Entra ID / SSO</li>
+          <li>Contacts & Accounts module</li>
+          <li>M365 Graph API auth</li>
+          <li>Basic UI shell (Fluent UI)</li>
+          <li>CI/CD pipeline</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="phase-num">PHASE 02</div>
+        <div class="phase-title">Core CRM</div>
+        <div class="phase-dur badge badge-green">Weeks 7–14</div>
+        <ul class="phase-items">
+          <li>Sales pipeline & deals</li>
+          <li>Support ticketing</li>
+          <li>Marketing & lead capture</li>
+          <li>Outlook / Teams sync</li>
+          <li>SharePoint file storage</li>
+          <li>Basic dashboards</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="phase-num">PHASE 03</div>
+        <div class="phase-title">Integrations</div>
+        <div class="phase-dur badge badge-orange">Weeks 15–20</div>
+        <ul class="phase-items">
+          <li>Stacc Open Banking</li>
+          <li>Power BI Embedded</li>
+          <li>Logic Apps automation</li>
+          <li>Teams CRM bot</li>
+          <li>Azure AI (GPT-4o)</li>
+          <li>Mobile app (React Native)</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="phase-num">PHASE 04</div>
+        <div class="phase-title">Scale & AI</div>
+        <div class="phase-dur badge badge-purple">Weeks 21–28</div>
+        <ul class="phase-items">
+          <li>AI lead scoring</li>
+          <li>Meeting auto-summaries</li>
+          <li>Advanced analytics</li>
+          <li>Multi-tenant hardening</li>
+          <li>Performance tuning</li>
+          <li>GA release</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="fl">CRM Architecture Blueprint · v1.0</div>
+    <div class="fr">Azure · M365 · Stacc · 2026</div>
+  </footer>
+
+</div>
+</body>
+</html>
