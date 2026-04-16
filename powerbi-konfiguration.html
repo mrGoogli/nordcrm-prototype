@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power BI Konfiguration — NordCRM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@300;400;500&family=Lato:wght@300;400;700&display=swap');
+
+:root {
+  --bg:#f4f1eb; --white:#fffefb; --surface2:#ede9df; --ink:#1c1917; --ink2:#2e2a26;
+  --muted:#7c7669; --rule:#d4cfc4; --rule2:#c4bfb6;
+  --blue:#1a4f8c; --blue-l:#e8f0fb; --blue-m:#b8d0f0;
+  --green:#1a6b4a; --green-l:#e6f4ee; --green-m:#a3d4bc;
+  --amber:#9a4f00; --amber-l:#fdf3e0; --amber-m:#f4c87c;
+  --red:#b91c1c; --red-l:#fde8e8;
+  --pbi:#f2c811; --pbi-l:#fef9e0; --pbi-d:#c9a208;
+  --m365:#0078d4; --m365-l:#e8f3fd;
+  --stacc:#0e7490; --stacc-l:#e0f5f9;
+  --shadow:0 4px 20px rgba(28,25,20,.08);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Lato',sans-serif;font-weight:300;line-height:1.6;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--ink);padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.tb-logo{font-family:'Playfair Display',serif;font-size:17px;font-weight:900;color:white;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.tb-pbi{background:var(--pbi);color:var(--ink);font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 9px;border-radius:3px;font-weight:500;letter-spacing:.04em}
+.tb-steps{display:flex;gap:4px}
+.ts-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .2s;border:1.5px solid #3a3730;color:#6b6660}
+.ts-dot:hover{border-color:#6b6660;color:#a8a49e}
+.ts-dot.active{background:var(--pbi);border-color:var(--pbi);color:var(--ink);font-weight:600}
+.ts-dot.done{background:var(--green);border-color:var(--green);color:white}
+
+/* ── LAYOUT ── */
+.outer{max-width:1060px;margin:0 auto;padding:40px 24px 80px}
+
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:40px}
+.ph-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--pbi-d);margin-bottom:10px}
+.ph-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,46px);font-weight:900;letter-spacing:-.02em;line-height:1.05;margin-bottom:12px}
+.ph-sub{font-size:14px;color:var(--muted);max-width:600px;line-height:1.7}
+.ph-tags{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.ph-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:3px;letter-spacing:.06em;border:1px solid}
+.pt-pbi{background:var(--pbi-l);color:var(--pbi-d);border-color:rgba(194,162,8,.35)}
+.pt-m365{background:var(--m365-l);color:var(--m365);border-color:rgba(0,120,212,.25)}
+.pt-stacc{background:var(--stacc-l);color:var(--stacc);border-color:rgba(14,116,144,.25)}
+.pt-green{background:var(--green-l);color:var(--green);border-color:var(--green-m)}
+
+/* ── STEP SECTIONS ── */
+.step-section{display:none}
+.step-section.visible{display:block;animation:fadeUp .35s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── STEP HEADER ── */
+.step-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--ink)}
+.sh-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:var(--surface2);padding:4px 10px;border-radius:4px;flex-shrink:0;margin-top:4px}
+.sh-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;letter-spacing:-.02em;line-height:1.15}
+.sh-sub{font-size:13px;color:var(--muted);margin-top:4px}
+.sh-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:var(--surface2);padding:3px 9px;border-radius:3px;margin-left:auto;flex-shrink:0;white-space:nowrap}
+
+/* ── ARCH DIAGRAM ── */
+.arch-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:0;background:var(--white);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.af-node{padding:16px 12px;text-align:center;border-right:1px solid var(--rule);position:relative}
+.af-node:last-child{border-right:none}
+.af-icon{font-size:24px;margin-bottom:6px;display:block}
+.af-label{font-size:11px;font-weight:700;color:var(--ink2);display:block;margin-bottom:2px}
+.af-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+.af-arrow{position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--rule2);z-index:2;background:var(--white);padding:0 2px}
+.af-cosmos{background:var(--blue-l)}
+.af-synapse{background:linear-gradient(135deg,var(--m365-l),var(--blue-l))}
+.af-pbi{background:var(--pbi-l)}
+.af-token{background:var(--surface2)}
+.af-embed{background:var(--green-l)}
+
+/* ── STEP CARDS ── */
+.step-cards{display:flex;flex-direction:column;gap:12px}
+.sc{background:var(--white);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.sc-head{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--rule);cursor:pointer;user-select:none}
+.sc-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:var(--rule);padding:2px 7px;border-radius:3px}
+.sc-title{font-size:13px;font-weight:700;flex:1}
+.sc-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:3px;letter-spacing:.04em;border:1px solid}
+.badge-portal{color:var(--m365);background:var(--m365-l);border-color:rgba(0,120,212,.2)}
+.badge-cli{color:var(--green);background:var(--green-l);border-color:var(--green-m)}
+.badge-code{color:var(--ink2);background:var(--surface2);border-color:var(--rule2)}
+.badge-pbi{color:var(--pbi-d);background:var(--pbi-l);border-color:rgba(194,162,8,.3)}
+.sc-chev{color:var(--muted);font-size:12px;transition:transform .2s}
+.sc-chev.open{transform:rotate(90deg)}
+.sc-body{display:none;padding:16px}
+.sc-body.open{display:block}
+
+/* ── CODE BLOCKS ── */
+.code{background:#1c1917;border-radius:6px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.75;overflow-x:auto;margin:10px 0;position:relative}
+.code .kw{color:#93c5fd} /* keyword / type */
+.code .str{color:#86efac} /* string */
+.code .num{color:#fcd34d} /* number */
+.code .cm{color:#4e5670;font-style:italic} /* comment */
+.code .fn{color:#c4b5fd} /* function/method */
+.code .prop{color:#67e8f9} /* property */
+.code .op{color:#f9a8d4} /* operator */
+.code .tag{color:#fca5a5} /* html tag */
+.code .url{color:#a5f3fc} /* url */
+.code-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:14px;margin-bottom:4px;display:block}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#9ca3af;font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{background:rgba(255,255,255,.15);color:white}
+
+/* ── INFO / WARN BOXES ── */
+.info-box{border-left:4px solid;padding:10px 14px;border-radius:0 5px 5px 0;margin:10px 0;font-size:12.5px;line-height:1.6}
+.ib-blue{background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
+.ib-amber{background:var(--amber-l);border-color:var(--amber);color:var(--amber)}
+.ib-green{background:var(--green-l);border-color:var(--green);color:var(--green)}
+.ib-pbi{background:var(--pbi-l);border-color:var(--pbi-d);color:var(--pbi-d)}
+.ib-title{font-weight:700;display:block;margin-bottom:2px}
+.ib-body{color:var(--ink2)}
+
+/* ── PARAMETER TABLES ── */
+.param-table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
+.param-table th{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 10px;text-align:left;border-bottom:2px solid var(--rule)}
+.param-table td{padding:7px 10px;border-bottom:1px solid rgba(212,207,196,.5);vertical-align:top;line-height:1.4}
+.param-table tr:last-child td{border-bottom:none}
+.param-table tr:hover td{background:var(--surface2)}
+.p-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);font-weight:500}
+.p-type{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.p-req{background:var(--red-l);color:var(--red);font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px}
+.p-opt{background:var(--surface2);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px}
+
+/* ── REPORT PREVIEWS ── */
+.report-previews{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.rp-card{background:var(--white);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.rpc-head{padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between}
+.rpc-title{font-size:12px;font-weight:700;color:var(--ink2)}
+.rpc-tag{font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 6px;border-radius:3px;background:var(--pbi-l);color:var(--pbi-d);border:1px solid rgba(194,162,8,.3)}
+.rpc-body{padding:12px;min-height:120px}
+
+/* ── MINI CHARTS (CSS only) ── */
+.mini-bars{display:flex;align-items:flex-end;gap:4px;height:60px;padding:0 4px}
+.mb-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.mb-bar{width:100%;border-radius:2px 2px 0 0;transition:height .5s}
+.mb-lbl{font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--muted);white-space:nowrap}
+.mini-funnel{display:flex;flex-direction:column;gap:3px;padding:4px}
+.mf-row{display:flex;align-items:center;gap:6px}
+.mf-lbl{font-size:9px;color:var(--muted);width:60px;text-align:right;flex-shrink:0}
+.mf-bar{height:14px;border-radius:2px;display:flex;align-items:center;padding-left:5px;transition:width .5s}
+.mf-val{font-family:'JetBrains Mono',monospace;font-size:8px;color:white;font-weight:500}
+.sow-mini-tbl{width:100%;font-size:10px}
+.sow-mini-tbl th{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);padding:2px 4px;text-align:left;border-bottom:1px solid var(--rule)}
+.sow-mini-tbl td{padding:3px 4px;border-bottom:1px solid rgba(212,207,196,.4)}
+.sow-mini-bar{height:4px;border-radius:2px;background:var(--blue);display:inline-block}
+
+/* ── CHECKLIST ── */
+.checklist{display:flex;flex-direction:column;gap:0;background:var(--white);border:1px solid var(--rule);border-radius:8px;overflow:hidden;margin:10px 0}
+.cl-group-hd{padding:7px 14px;background:var(--surface2);border-bottom:1px solid var(--rule);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(212,207,196,.4);transition:background .1s}
+.cl-item:last-child{border-bottom:none}
+.cl-item:hover{background:var(--surface2)}
+.cl-box{width:15px;height:15px;border:1.5px solid var(--rule2);border-radius:3px;flex-shrink:0;margin-top:2px;background:white;cursor:pointer;transition:all .15s}
+.cl-box.checked{background:var(--green);border-color:var(--green)}
+.cl-box.checked::after{content:'✓';color:white;font-size:9px;display:flex;align-items:center;justify-content:center;height:100%}
+.cl-txt{flex:1;font-size:12px;line-height:1.5}
+.cl-txt strong{display:block;font-weight:600;margin-bottom:1px}
+.cl-txt span{color:var(--muted)}
+.cl-badge{flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 6px;border-radius:3px;margin-top:2px}
+
+/* ── NAV BUTTONS ── */
+.step-nav{display:flex;justify-content:space-between;margin-top:32px;padding-top:20px;border-top:1px solid var(--rule)}
+.nav-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--rule);background:var(--white);color:var(--muted);transition:all .15s;font-family:'Lato',sans-serif}
+.nav-btn:hover{border-color:var(--ink);color:var(--ink)}
+.nav-btn.primary{background:var(--ink);color:white;border-color:var(--ink)}
+.nav-btn.primary:hover{background:var(--ink2)}
+.nav-btn.pbi{background:var(--pbi);color:var(--ink);border-color:var(--pbi-d)}
+.nav-btn.pbi:hover{background:var(--pbi-d)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── PROGRESS BAR ── */
+.progress-bar{height:3px;background:var(--rule);border-radius:2px;margin-bottom:32px;overflow:hidden}
+.progress-fill{height:100%;background:var(--pbi);border-radius:2px;transition:width .4s ease}
+
+/* ── RLS VISUAL ── */
+.rls-matrix{display:grid;grid-template-columns:140px 1fr 1fr 1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden;font-size:11px;margin:10px 0}
+.rls-cell{background:var(--white);padding:7px 10px;display:flex;align-items:center;justify-content:center;text-align:center}
+.rls-head{background:var(--ink);color:white;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.05em;font-weight:500}
+.rls-role{background:var(--surface2);font-weight:600;font-size:11px;justify-content:flex-start}
+.rls-yes{background:var(--green-l);color:var(--green);font-weight:700}
+.rls-part{background:var(--amber-l);color:var(--amber);font-size:10px}
+.rls-no{background:var(--red-l);color:var(--red);font-size:18px;font-weight:700}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-logo">
+    NordCRM
+    <span class="tb-pbi">Power BI</span>
+  </div>
+  <div class="tb-steps" id="stepDots">
+    <div class="ts-dot active" onclick="goStep(1)" title="Arkitektur">1</div>
+    <div class="ts-dot" onclick="goStep(2)" title="Azure setup">2</div>
+    <div class="ts-dot" onclick="goStep(3)" title="Synapse">3</div>
+    <div class="ts-dot" onclick="goStep(4)" title="Rapporter">4</div>
+    <div class="ts-dot" onclick="goStep(5)" title="Embed kode">5</div>
+    <div class="ts-dot" onclick="goStep(6)" title="RLS + sikkerhed">6</div>
+    <div class="ts-dot" onclick="goStep(7)" title="Go-live tjekliste">7</div>
+  </div>
+</div>
+
+<div class="outer">
+
+  <div class="page-header">
+    <div class="ph-eyebrow">// Konfigurationsvejledning</div>
+    <div class="ph-title">Power BI Embedded<br>Opsætning & Integration</div>
+    <div class="ph-sub">Trin-for-trin guide til opsætning af Power BI Embedded i NordCRM — fra Azure-kapacitet til live rapporter med filtrering på KAM, AM, pipeline og SOW.</div>
+    <div class="ph-tags">
+      <span class="ph-tag pt-pbi">Power BI Embedded A1</span>
+      <span class="ph-tag pt-m365">Azure Synapse Analytics</span>
+      <span class="ph-tag pt-m365">M365 Entra ID</span>
+      <span class="ph-tag pt-stacc">Stacc data</span>
+      <span class="ph-tag pt-green">GDPR RLS</span>
+    </div>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:14%"></div></div>
+
+  <!-- ══════════════════════════════
+       STEP 1 — ARCHITECTURE
+  ══════════════════════════════ -->
+  <div class="step-section visible" id="step-1">
+    <div class="step-header">
+      <div class="sh-num">01 / 07</div>
+      <div>
+        <div class="sh-title">Arkitektur & dataflow</div>
+        <div class="sh-sub">Forstå hvordan data bevæger sig fra NordCRM til Power BI-rapporter i browseren</div>
+      </div>
+      <div class="sh-time">⏱ Læsetid: 5 min</div>
+    </div>
+
+    <div class="arch-flow">
+      <div class="af-node af-cosmos">
+        <span class="af-icon">🗄️</span>
+        <span class="af-label">Cosmos DB</span>
+        <span class="af-sub">Operationel data<br>contacts · deals · tickets</span>
+        <span class="af-arrow">→</span>
+      </div>
+      <div class="af-node af-synapse">
+        <span class="af-icon">⚡</span>
+        <span class="af-label">Azure Synapse</span>
+        <span class="af-sub">Synapse Link<br>nær-realtid sync</span>
+        <span class="af-arrow">→</span>
+      </div>
+      <div class="af-node af-pbi">
+        <span class="af-icon">📊</span>
+        <span class="af-label">Power BI</span>
+        <span class="af-sub">DirectQuery<br>Embedded A1</span>
+        <span class="af-arrow">→</span>
+      </div>
+      <div class="af-node af-token">
+        <span class="af-icon">🔑</span>
+        <span class="af-label">Token Service</span>
+        <span class="af-sub">Backend API<br>embed-token gen.</span>
+        <span class="af-arrow">→</span>
+      </div>
+      <div class="af-node af-embed">
+        <span class="af-icon">🖥️</span>
+        <span class="af-label">NordCRM UI</span>
+        <span class="af-sub">React + PBI SDK<br>iframe embed</span>
+      </div>
+    </div>
+
+    <div class="info-box ib-pbi">
+      <span class="ib-title">📊 Hvorfor DirectQuery og ikke Import?</span>
+      <span class="ib-body">Med DirectQuery henter Power BI data direkte fra Synapse ved hvert rapportopkald — ingen forældet cache. Filtre (KAM, periode, stadie) slås igennem til databaseforespørgsler. Det er lidt langsommere (&lt;3 sek.) men altid aktuelt. Import er hurtigere men kræver daglig refresh-planlægning.</span>
+    </div>
+
+    <div class="info-box ib-blue">
+      <span class="ib-title">🔗 Synapse Link for Cosmos DB</span>
+      <span class="ib-body">Azure Synapse Link er en nøglefunktion: den synkroniserer automatisk al data fra Cosmos DB til Synapse Analytics Analytical Store (columnar format) uden ETL-pipelines. Latency: typisk under 2 minutter. Aktiveres med én indstilling på Cosmos DB-kontoen.</span>
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" disabled>← Forrige</button>
+      <button class="nav-btn primary" onclick="goStep(2)">Azure setup → </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STEP 2 — AZURE SETUP
+  ══════════════════════════════ -->
+  <div class="step-section" id="step-2">
+    <div class="step-header">
+      <div class="sh-num">02 / 07</div>
+      <div>
+        <div class="sh-title">Azure opsætning</div>
+        <div class="sh-sub">Provisionér Power BI Embedded-kapacitet og konfigurér Entra ID Service Principal</div>
+      </div>
+      <div class="sh-time">⏱ 30-45 min</div>
+    </div>
+
+    <div class="step-cards">
+
+      <div class="sc">
+        <div class="sc-head" onclick="toggleSC(this)">
+          <span class="sc-num">2.1</span>
+          <span class="sc-title">Deploy Bicep — Power BI Embedded kapacitet</span>
+          <span class="sc-badge badge-cli">Azure CLI</span>
+          <span class="sc-chev">▶</span>
+        </div>
+        <div class="sc-body">
+          <div class="info-box ib-blue">
+            <span class="ib-body">Power BI Embedded-kapaciteten er allerede defineret i <strong>modules/powerbi.bicep</strong> fra IaC-pakken. Kør bare main Bicep-deploymenten — kapaciteten oprettes automatisk i North Europe.</span>
+          </div>
+          <span class="code-label">Bicep deploy (fra IaC-pakken)</span>
+          <div class="code">
+<span class="cm"># Log ind og sæt subscription</span>
+<span class="fn">az</span> login
+<span class="fn">az</span> account <span class="kw">set</span> --subscription <span class="str">"&lt;YOUR-SUBSCRIPTION-ID&gt;"</span>
+
+<span class="cm"># Deploy hele NordCRM infrastruktur (inkl. Power BI Embedded)</span>
+<span class="fn">az</span> deployment sub create \
+  --location <span class="str">northeurope</span> \
+  --template-file <span class="str">main.bicep</span> \
+  --parameters <span class="str">@main.bicepparam</span>
+
+<span class="cm"># Verificér kapaciteten</span>
+<span class="fn">az</span> powerbi embedded-capacity <span class="kw">show</span> \
+  --name <span class="str">pbinordcrmoprod</span> \
+  --resource-group <span class="str">rg-nordcrm-prod</span>
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+          </div>
+          <div class="info-box ib-amber">
+            <span class="ib-title">💰 Pris: SKU A1</span>
+            <span class="ib-body">A1 koster ca. DKK 5.000-6.000/måned (kørende 24/7). Overvej at pause kapaciteten uden for arbejdstid via Azure Automation — kan spare 60% af omkostningerne. Skala til A2 (~10.000 kr/mdr.) hvis &gt;10 samtidige brugere.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sc">
+        <div class="sc-head" onclick="toggleSC(this)">
+          <span class="sc-num">2.2</span>
+          <span class="sc-title">Opret App Registration (Service Principal)</span>
+          <span class="sc-badge badge-portal">Azure Portal</span>
+          <span class="sc-chev">▶</span>
+        </div>
+        <div class="sc-body">
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Service Principalen bruges af NordCRM backend til at generere embed-tokens uden at nogen bruger er logget ind.</p>
+          <span class="code-label">CLI alternativ til portal</span>
+          <div class="code">
+<span class="cm"># Opret App Registration</span>
+<span class="fn">az</span> ad app create \
+  --display-name <span class="str">"NordCRM-PowerBI-SP"</span> \
+  --sign-in-audience <span class="str">AzureADMyOrg</span>
+
+<span class="cm"># Gem appId (clientId)</span>
+APP_ID=$(<span class="fn">az</span> ad app list --display-name <span class="str">"NordCRM-PowerBI-SP"</span> \
+  --query <span class="str">"[0].appId"</span> -o tsv)
+
+<span class="cm"># Opret service principal</span>
+<span class="fn">az</span> ad sp create --id $APP_ID
+
+<span class="cm"># Opret client secret (gem i Key Vault!)</span>
+<span class="fn">az</span> ad app credential reset \
+  --id $APP_ID \
+  --years <span class="num">2</span> \
+  --query <span class="str">"{clientId:appId, secret:password}"</span>
+
+<span class="cm"># Gem secret i Azure Key Vault</span>
+<span class="fn">az</span> keyvault secret set \
+  --vault-name <span class="str">kv-nordcrm-prod</span> \
+  --name <span class="str">pbi-sp-client-secret</span> \
+  --value <span class="str">"&lt;SECRET-FROM-ABOVE&gt;"</span>
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:8px">Derefter: I Power BI Admin Portal → Tenant Settings → aktivér <strong>"Service principals can use Power BI APIs"</strong> og tilføj security group med service principalen.</p>
+        </div>
+      </div>
+
+      <div class="sc">
+        <div class="sc-head" onclick="toggleSC(this)">
+          <span class="sc-num">2.3</span>
+          <span class="sc-title">Aktivér Synapse Link på Cosmos DB</span>
+          <span class="sc-badge badge-cli">Azure CLI</span>
+          <span class="sc-chev">▶</span>
+        </div>
+        <div class="sc-body">
+          <div class="info-box ib-green">
+            <span class="ib-body">Synapse Link er den "magiske" forbindelse. Aktivering tager 5-10 minutter. Derefter synkroniseres alle Cosmos DB-containere automatisk til Synapse Analytical Store.</span>
+          </div>
+          <span class="code-label">Aktivér Synapse Link</span>
+          <div class="code">
+<span class="cm"># Aktivér Synapse Link på Cosmos DB-kontoen</span>
+<span class="fn">az</span> cosmosdb update \
+  --name <span class="str">cosmos-nordcrm-prod</span> \
+  --resource-group <span class="str">rg-nordcrm-prod</span> \
+  --enable-analytical-storage <span class="kw">true</span>
+
+<span class="cm"># Aktivér analytical store på containers der skal bruges i Power BI</span>
+<span class="cm"># (deals, contacts, accounts, users, activities, audit_log)</span>
+<span class="kw">for</span> container in deals contacts accounts users activities; <span class="kw">do</span>
+  <span class="fn">az</span> cosmosdb sql container update \
+    --account-name <span class="str">cosmos-nordcrm-prod</span> \
+    --database-name <span class="str">nordcrm</span> \
+    --name $container \
+    --resource-group <span class="str">rg-nordcrm-prod</span> \
+    --analytical-storage-ttl <span class="num">-1</span>
+<span class="kw">done</span>
+
+<span class="cm"># Link Synapse workspace til Cosmos DB</span>
+<span class="cm"># (Gøres i Synapse Studio: Data → + → Connect to external data → Azure Cosmos DB)</span>
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="step-nav">
+      <button class="nav-btn" onclick="goStep(1)">← Arkitektur</button>
+      <button class="nav-btn primary" onclick="goStep(3)">Synapse views →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STEP 3 — SYNAPSE VIEWS
+  ══════════════════════════════ -->
+  <div class="step-section" id="step-3">
+    <div class="step-header">
+      <div class="sh-num">03 / 07</div>
+      <div>
+        <div class="sh-title">Synapse Analytics — SQL Views</div>
+        <div class="sh-sub">Definer de SQL-views i Synapse der udgør datamodellen for Power BI</div>
+      </div>
+      <div class="sh-time">⏱ 45 min</div>
+    </div>
+
+    <div class="info-box ib-blue">
+      <span class="ib-title">📐 Datamodel-strategi</span>
+      <span class="ib-body">Vi bruger Synapse Serverless SQL Pool med OPENROWSET til at læse direkte fra Cosmos DB Analytical Store. Views transformerer de flade JSON-dokumenter til tabelformat som Power BI forstår. Dette kræver ingen separat ETL-pipeline.</span>
+    </div>
+
+    <div class="step-cards">
+
+      <div class="sc">
+        <div class="sc-head" onclick="toggleSC(this)">
+          <span class="sc-num">3.1</span>
+          <span class="sc-title">View: vw_deals — aftaler med AM/KAM</span>
+          <span class="sc-badge badge-code">T-SQL</span>
+          <span class="sc-chev open">▶</span>
+        </div>
+        <div class="sc-body open">
+          <span class="code-label">Synapse Serverless SQL — Kør i Synapse Studio</span>
+          <div class="code">
+<span class="cm">-- Opret database til NordCRM views</span>
+<span class="kw">CREATE DATABASE</span> nordcrm_reporting;
+<span class="kw">USE</span> nordcrm_reporting;
+<span class="kw">GO</span>
+
+<span class="cm">-- View: deals med AM, KAM, kontakt og konto-data</span>
+<span class="kw">CREATE OR ALTER VIEW</span> <span class="fn">vw_deals</span> <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+  d.id                                          <span class="kw">AS</span> deal_id,
+  d.tenantId,
+  d.title,
+  d.stage,
+  d.valueOere / <span class="num">100.0</span>                           <span class="kw">AS</span> value_dkk,  <span class="cm">-- øre → DKK</span>
+  d.currency,
+  d.probability,
+  d.aiProbability                               <span class="kw">AS</span> ai_probability,
+  d.expectedCloseDate,
+  d.closedAt,
+  d.createdAt,
+  d.updatedAt,
+
+  <span class="cm">-- Kontaktinfo</span>
+  c.firstName <span class="op">+</span> <span class="str">' '</span> <span class="op">+</span> c.lastName               <span class="kw">AS</span> contact_name,
+  c.email                                       <span class="kw">AS</span> contact_email,
+
+  <span class="cm">-- Kontoinfo</span>
+  a.name                                        <span class="kw">AS</span> account_name,
+  a.cvrNumber                                   <span class="kw">AS</span> account_cvr,
+  a.industry,
+
+  <span class="cm">-- Flåde data (fra accounts.fleetData)</span>
+  a.fleetData.fleetSize                         <span class="kw">AS</span> fleet_size,
+  a.fleetData.opendoFleet                       <span class="kw">AS</span> opendo_fleet,
+  <span class="kw">CASE</span>
+    <span class="kw">WHEN</span> a.fleetData.fleetSize <span class="op">></span> <span class="num">0</span>
+    <span class="kw">THEN</span> CAST(a.fleetData.opendoFleet <span class="kw">AS</span> <span class="kw">FLOAT</span>) /
+         CAST(a.fleetData.fleetSize   <span class="kw">AS</span> <span class="kw">FLOAT</span>) <span class="op">*</span> <span class="num">100</span>
+    <span class="kw">ELSE</span> <span class="num">0</span>
+  <span class="kw">END</span>                                           <span class="kw">AS</span> sow_pct,
+
+  <span class="cm">-- AM / KAM (fra accounts)</span>
+  a.accountManager.name                         <span class="kw">AS</span> am_name,
+  a.accountManager.userId                       <span class="kw">AS</span> am_user_id,
+  a.keyAccountManager.name                      <span class="kw">AS</span> kam_name,
+  a.keyAccountManager.userId                    <span class="kw">AS</span> kam_user_id,
+
+  <span class="cm">-- Beregnet: vundet/tabt</span>
+  <span class="kw">CASE</span> d.stage
+    <span class="kw">WHEN</span> <span class="str">'won'</span>  <span class="kw">THEN</span> <span class="num">1</span>
+    <span class="kw">WHEN</span> <span class="str">'lost'</span> <span class="kw">THEN</span> <span class="num">0</span>
+    <span class="kw">ELSE</span> <span class="kw">NULL</span>
+  <span class="kw">END</span>                                           <span class="kw">AS</span> is_won
+
+<span class="kw">FROM</span>
+  OPENROWSET(<span class="str">'CosmosDB'</span>,
+    <span class="str">'Account=cosmos-nordcrm-prod;Database=nordcrm;Key=@key'</span>,
+    deals) <span class="kw">WITH</span> (
+      id           <span class="kw">VARCHAR</span>(<span class="num">64</span>),
+      tenantId     <span class="kw">VARCHAR</span>(<span class="num">64</span>),
+      title        <span class="kw">NVARCHAR</span>(<span class="num">500</span>),
+      stage        <span class="kw">VARCHAR</span>(<span class="num">50</span>),
+      valueOere    <span class="kw">BIGINT</span>,
+      currency     <span class="kw">VARCHAR</span>(<span class="num">3</span>),
+      probability  <span class="kw">INT</span>,
+      aiProbability <span class="kw">FLOAT</span>,
+      contactId    <span class="kw">VARCHAR</span>(<span class="num">64</span>),
+      accountId    <span class="kw">VARCHAR</span>(<span class="num">64</span>),
+      expectedCloseDate <span class="kw">DATE</span>,
+      closedAt     <span class="kw">DATETIME2</span>,
+      createdAt    <span class="kw">DATETIME2</span>,
+      updatedAt    <span class="kw">DATETIME2</span>
+    ) <span class="kw">AS</span> d
+  <span class="kw">LEFT JOIN</span> OPENROWSET(<span class="str">'CosmosDB'</span>, ..., contacts) c
+    <span class="kw">ON</span> d.contactId <span class="op">=</span> c.id <span class="kw">AND</span> d.tenantId <span class="op">=</span> c.tenantId
+  <span class="kw">LEFT JOIN</span> OPENROWSET(<span class="str">'CosmosDB'</span>, ..., accounts) a
+    <span class="kw">ON</span> d.accountId <span class="op">=</span> a.id <span class="kw">AND</span> d.tenantId <span class="op">=</span> a.tenantId;
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sc">
+        <div class="sc-head" onclick="toggleSC(this)">
+          <span class="sc-num">3.2</span>
+          <span class="sc-title">DAX-målinger til Power BI</span>
+          <span class="sc-badge badge-pbi">DAX</span>
+          <span class="sc-chev">▶</span>
+        </div>
+        <div class="sc-body">
+          <span class="code-label">Power BI Desktop — DAX Measures</span>
+          <div class="code">
+<span class="cm">// ── PIPELINE MEASURES ──</span>
+<span class="prop">Pipeline Total DKK</span> <span class="op">=</span>
+  <span class="fn">SUMX</span>(
+    <span class="fn">FILTER</span>(vw_deals, vw_deals[stage] <span class="op"><></span> <span class="str">"won"</span> <span class="op">&&</span> vw_deals[stage] <span class="op"><></span> <span class="str">"lost"</span>),
+    vw_deals[value_dkk]
+  )
+
+<span class="prop">Pipeline Vægtet DKK</span> <span class="op">=</span>
+  <span class="fn">SUMX</span>(
+    <span class="fn">FILTER</span>(vw_deals, vw_deals[stage] <span class="op"><></span> <span class="str">"won"</span>),
+    vw_deals[value_dkk] <span class="op">*</span> vw_deals[probability] <span class="op">/</span> <span class="num">100</span>
+  )
+
+<span class="prop">Win Rate %</span> <span class="op">=</span>
+  <span class="fn">DIVIDE</span>(
+    <span class="fn">COUNTROWS</span>(<span class="fn">FILTER</span>(vw_deals, vw_deals[is_won] <span class="op">=</span> <span class="num">1</span>)),
+    <span class="fn">COUNTROWS</span>(<span class="fn">FILTER</span>(vw_deals, vw_deals[is_won] <span class="op"><></span> <span class="kw">BLANK</span>())),
+    <span class="num">0</span>
+  )
+
+<span class="prop">Vundne DKK</span> <span class="op">=</span>
+  <span class="fn">CALCULATE</span>(<span class="fn">SUM</span>(vw_deals[value_dkk]), vw_deals[stage] <span class="op">=</span> <span class="str">"won"</span>)
+
+<span class="cm">// ── SOW MEASURES ──</span>
+<span class="prop">SOW % Gennemsnit</span> <span class="op">=</span>
+  <span class="fn">AVERAGEX</span>(<span class="fn">FILTER</span>(vw_deals, vw_deals[fleet_size] <span class="op">></span> <span class="num">0</span>), vw_deals[sow_pct])
+
+<span class="prop">SOW Farve</span> <span class="op">=</span>
+  <span class="kw">VAR</span> sow <span class="op">=</span> [<span class="prop">SOW % Gennemsnit</span>]
+  <span class="kw">RETURN</span>
+    <span class="fn">IF</span>(sow <span class="op">>=</span> <span class="num">25</span>, <span class="str">"#1a6b4a"</span>,    <span class="cm">-- Grøn: >=25%</span>
+    <span class="fn">IF</span>(sow <span class="op">>=</span> <span class="num">10</span>, <span class="str">"#9a4f00"</span>,    <span class="cm">-- Amber: 10-25%</span>
+    <span class="str">"#b91c1c"</span>))                 <span class="cm">-- Rød: <10%</span>
+
+<span class="prop">Total Flåde</span> <span class="op">=</span> <span class="fn">SUM</span>(vw_deals[fleet_size])
+<span class="prop">Opendo Flåde</span> <span class="op">=</span> <span class="fn">SUM</span>(vw_deals[opendo_fleet])
+
+<span class="cm">// ── DAGE TIL LUKNING ──</span>
+<span class="prop">Dage til lukning (gns.)</span> <span class="op">=</span>
+  <span class="fn">AVERAGEX</span>(
+    <span class="fn">FILTER</span>(vw_deals, vw_deals[stage] <span class="op"><></span> <span class="str">"won"</span> <span class="op">&&</span> vw_deals[stage] <span class="op"><></span> <span class="str">"lost"</span>),
+    <span class="fn">DATEDIFF</span>(<span class="fn">TODAY</span>(), vw_deals[expectedCloseDate], <span class="kw">DAY</span>)
+  )
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="step-nav">
+      <button class="nav-btn" onclick="goStep(2)">← Azure setup</button>
+      <button class="nav-btn primary" onclick="goStep(4)">Byg rapporter →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STEP 4 — REPORTS
+  ══════════════════════════════ -->
+  <div class="step-section" id="step-4">
+    <div class="step-header">
+      <div class="sh-num">04 / 07</div>
+      <div>
+        <div class="sh-title">Rapportdesign i Power BI Desktop</div>
+        <div class="sh-sub">De fire centrale rapporter til NordCRM Rapporteringsfanen</div>
+      </div>
+      <div class="sh-time">⏱ 2-3 timer</div>
+    </div>
+
+    <div class="report-previews">
+
+      <div class="rp-card">
+        <div class="rpc-head"><span class="rpc-title">1. Pipeline Funnel</span><span class="rpc-tag">Filtérbar</span></div>
+        <div class="rpc-body">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Slicers: KAM · AM · Periode · Stadie · Flådestørrelse</div>
+          <div class="mini-funnel">
+            <div class="mf-row"><span class="mf-lbl">Prospect</span><div class="mf-bar" style="width:95%;background:#c4bfb6"><span class="mf-val" style="color:var(--ink2)">320k</span></div></div>
+            <div class="mf-row"><span class="mf-lbl">Kvalificeret</span><div class="mf-bar" style="width:72%;background:var(--blue-m)"><span class="mf-val" style="color:var(--blue)">228k</span></div></div>
+            <div class="mf-row"><span class="mf-lbl">Tilbud sent</span><div class="mf-bar" style="width:55%;background:#93c5fd"><span class="mf-val" style="color:var(--blue)">184k</span></div></div>
+            <div class="mf-row"><span class="mf-lbl">Forhandling</span><div class="mf-bar" style="width:40%;background:var(--amber-m)"><span class="mf-val">140k</span></div></div>
+            <div class="mf-row"><span class="mf-lbl">Vundet</span><div class="mf-bar" style="width:22%;background:var(--green-m)"><span class="mf-val" style="color:var(--green)">80k</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rp-card">
+        <div class="rpc-head"><span class="rpc-title">2. Vundne aftaler pr. måned</span><span class="rpc-tag">Tidserie</span></div>
+        <div class="rpc-body">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Grupperingsvalgmulighed: AM · KAM · Produkt</div>
+          <div class="mini-bars">
+            <div class="mb-col"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">48k</div><div class="mb-bar" style="height:34%;background:var(--blue-m)"></div><div class="mb-lbl">Jan</div></div>
+            <div class="mb-col"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">72k</div><div class="mb-bar" style="height:52%;background:var(--blue-m)"></div><div class="mb-lbl">Feb</div></div>
+            <div class="mb-col"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">120k</div><div class="mb-bar" style="height:86%;background:var(--blue)"></div><div class="mb-lbl">Mar</div></div>
+            <div class="mb-col"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">85k</div><div class="mb-bar" style="height:60%;background:var(--blue-m)"></div><div class="mb-lbl">Apr</div></div>
+            <div class="mb-col"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">—</div><div class="mb-bar" style="height:4%;background:var(--rule)"></div><div class="mb-lbl">Maj</div></div>
+            <div class="mb-col"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">—</div><div class="mb-bar" style="height:4%;background:var(--rule)"></div><div class="mb-lbl">Jun</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rp-card">
+        <div class="rpc-head"><span class="rpc-title">3. SOW oversigt</span><span class="rpc-tag">Filtérbar tabel</span></div>
+        <div class="rpc-body" style="padding:8px">
+          <table class="sow-mini-tbl">
+            <tr><th>Kunde</th><th>Flåde</th><th>Opendo</th><th>SOW</th><th>KAM</th></tr>
+            <tr><td>Nordvest Invest</td><td>100</td><td>10</td><td><div class="sow-mini-bar" style="width:20px;background:var(--amber)"></div> 10%</td><td>Søren B.</td></tr>
+            <tr><td>TechFlow ApS</td><td>250</td><td>80</td><td><div class="sow-mini-bar" style="width:64px;background:var(--green)"></div> 32%</td><td>P. Koch</td></tr>
+            <tr><td>HBK Ejendomme</td><td>40</td><td>40</td><td><div class="sow-mini-bar" style="width:80px;background:var(--green)"></div> 100%</td><td>Søren B.</td></tr>
+            <tr><td>L. Møller Hold.</td><td>60</td><td>5</td><td><div class="sow-mini-bar" style="width:12px;background:var(--red)"></div> 8%</td><td>M. Holm</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="rp-card">
+        <div class="rpc-head"><span class="rpc-title">4. KAM/AM Dashboard</span><span class="rpc-tag">KPI oversigt</span></div>
+        <div class="rpc-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px">
+            <div style="background:var(--blue-l);border-radius:5px;padding:8px;text-align:center"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">PIPELINE</div><div style="font-size:16px;font-weight:700;color:var(--blue)">1,98M</div></div>
+            <div style="background:var(--green-l);border-radius:5px;padding:8px;text-align:center"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">WIN RATE</div><div style="font-size:16px;font-weight:700;color:var(--green)">34%</div></div>
+            <div style="background:var(--pbi-l);border-radius:5px;padding:8px;text-align:center"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">GNSN. SOW</div><div style="font-size:16px;font-weight:700;color:var(--pbi-d)">18%</div></div>
+            <div style="background:var(--surface2);border-radius:5px;padding:8px;text-align:center"><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)">AKTIVE TILBUD</div><div style="font-size:16px;font-weight:700;color:var(--ink)">14</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="info-box ib-amber">
+      <span class="ib-title">⚠ Filtersikkerhed</span>
+      <span class="ib-body">Alle slicers i NordCRM sendes som URL-parametre til Power BI embed-URL. Power BI anvender dem som forespørgselsfiltre mod Synapse. Row-Level Security (konfigureres i trin 6) sikrer at brugere KUN ser egne data — selvom de fjerner slicer-filteret.</span>
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" onclick="goStep(3)">← Synapse views</button>
+      <button class="nav-btn primary" onclick="goStep(5)">Embed kode →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STEP 5 — EMBED CODE
+  ══════════════════════════════ -->
+  <div class="step-section" id="step-5">
+    <div class="step-header">
+      <div class="sh-num">05 / 07</div>
+      <div>
+        <div class="sh-title">Embed kode — Backend & Frontend</div>
+        <div class="sh-sub">Token-service i Node.js og React-komponent til NordCRM Rapporteringsfanen</div>
+      </div>
+      <div class="sh-time">⏱ 2-3 timer</div>
+    </div>
+
+    <div class="step-cards">
+
+      <div class="sc">
+        <div class="sc-head" onclick="toggleSC(this)">
+          <span class="sc-num">5.1</span>
+          <span class="sc-title">Backend — Embed Token Service (Node.js / TypeScript)</span>
+          <span class="sc-badge badge-code">TypeScript</span>
+          <span class="sc-chev open">▶</span>
+        </div>
+        <div class="sc-body open">
+          <span class="code-label">src/services/powerbi-embed.service.ts</span>
+          <div class="code">
+<span class="kw">import</span> { ConfidentialClientApplication } <span class="kw">from</span> <span class="str">'@azure/msal-node'</span>;
+<span class="kw">import</span> axios <span class="kw">from</span> <span class="str">'axios'</span>;
+
+<span class="kw">const</span> PBI_SCOPE = <span class="str">'https://analysis.windows.net/powerbi/api/.default'</span>;
+<span class="kw">const</span> PBI_API   = <span class="str">'https://api.powerbi.com/v1.0/myorg'</span>;
+
+<span class="kw">interface</span> <span class="prop">EmbedToken</span> {
+  token:      <span class="kw">string</span>;
+  tokenId:    <span class="kw">string</span>;
+  expiration: <span class="kw">string</span>;
+  embedUrl:   <span class="kw">string</span>;
+  reportId:   <span class="kw">string</span>;
+}
+
+<span class="kw">export class</span> <span class="prop">PowerBIEmbedService</span> {
+  <span class="kw">private</span> msalClient: ConfidentialClientApplication;
+
+  <span class="fn">constructor</span>() {
+    <span class="kw">this</span>.msalClient = <span class="kw">new</span> ConfidentialClientApplication({
+      auth: {
+        clientId:     process.env.PBI_SP_CLIENT_ID!,
+        clientSecret: process.env.PBI_SP_CLIENT_SECRET!,  <span class="cm">// Fra Key Vault</span>
+        authority:    <span class="str">`https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}`</span>,
+      }
+    });
+  }
+
+  <span class="kw">private async</span> <span class="fn">getAccessToken</span>(): <span class="kw">Promise</span>&lt;<span class="kw">string</span>&gt; {
+    <span class="kw">const</span> result = <span class="kw">await</span> <span class="kw">this</span>.msalClient.<span class="fn">acquireTokenByClientCredential</span>({
+      scopes: [PBI_SCOPE]
+    });
+    <span class="kw">if</span> (!result?.accessToken) <span class="kw">throw new</span> Error(<span class="str">'PBI token acquisition failed'</span>);
+    <span class="kw">return</span> result.accessToken;
+  }
+
+  <span class="cm">/**
+   * Generér embed-token med RLS-roller for den aktuelle bruger.
+   * Filtre sendes fra NordCRM frontend (kam_id, am_id, period, stage).
+   */</span>
+  <span class="kw">async</span> <span class="fn">generateEmbedToken</span>(
+    workspaceId: <span class="kw">string</span>,
+    reportId:    <span class="kw">string</span>,
+    userRole:    <span class="str">'am'</span> | <span class="str">'kam'</span> | <span class="str">'admin'</span>,
+    userId:      <span class="kw">string</span>,
+    tenantId:    <span class="kw">string</span>
+  ): <span class="kw">Promise</span>&lt;EmbedToken&gt; {
+
+    <span class="kw">const</span> accessToken = <span class="kw">await</span> <span class="kw">this</span>.<span class="fn">getAccessToken</span>();
+
+    <span class="cm">// Hent embed-URL til rapporten</span>
+    <span class="kw">const</span> reportRes = <span class="kw">await</span> axios.<span class="fn">get</span>(
+      <span class="str">`${PBI_API}/groups/${workspaceId}/reports/${reportId}`</span>,
+      { headers: { Authorization: <span class="str">`Bearer ${accessToken}`</span> } }
+    );
+    <span class="kw">const</span> embedUrl = reportRes.data.embedUrl;
+
+    <span class="cm">// Generer embed-token med RLS</span>
+    <span class="kw">const</span> tokenRes = <span class="kw">await</span> axios.<span class="fn">post</span>(
+      <span class="str">`${PBI_API}/groups/${workspaceId}/reports/${reportId}/GenerateToken`</span>,
+      {
+        accessLevel: <span class="str">'view'</span>,
+        <span class="cm">// RLS: sæt brugerens rolle og identitet</span>
+        identities: [{
+          username: userId,
+          roles:    [userRole],     <span class="cm">// 'am', 'kam' eller 'admin'</span>
+          datasets: [reportRes.data.datasetId]
+        }]
+      },
+      { headers: { Authorization: <span class="str">`Bearer ${accessToken}`</span> } }
+    );
+
+    <span class="cm">// Audit log: PBI embed access (GDPR — Art. 30)</span>
+    <span class="kw">await</span> <span class="fn">auditLog</span>({ action: <span class="str">'pbi_embed_access'</span>, userId, tenantId, reportId });
+
+    <span class="kw">return</span> { ...tokenRes.data, embedUrl, reportId };
+  }
+}
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sc">
+        <div class="sc-head" onclick="toggleSC(this)">
+          <span class="sc-num">5.2</span>
+          <span class="sc-title">Frontend — React Embed Komponent</span>
+          <span class="sc-badge badge-code">React / TSX</span>
+          <span class="sc-chev">▶</span>
+        </div>
+        <div class="sc-body">
+          <span class="code-label">npm install powerbi-client-react powerbi-client</span>
+          <div class="code">
+<span class="cm">// src/components/PipelineReport.tsx</span>
+<span class="kw">import</span> { PowerBIEmbed } <span class="kw">from</span> <span class="str">'powerbi-client-react'</span>;
+<span class="kw">import</span> { models, Report } <span class="kw">from</span> <span class="str">'powerbi-client'</span>;
+<span class="kw">import</span> { useState, useEffect } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">interface</span> <span class="prop">ReportFilters</span> {
+  period?:   <span class="kw">string</span>;
+  kamId?:    <span class="kw">string</span>;
+  amId?:     <span class="kw">string</span>;
+  stage?:    <span class="kw">string</span>;
+  fleetSize? <span class="kw">string</span>;
+}
+
+<span class="kw">export function</span> <span class="fn">PipelineReport</span>({ filters }: { filters: ReportFilters }) {
+  <span class="kw">const</span> [embedConfig, setEmbedConfig] = useState&lt;models.IReportEmbedConfiguration | <span class="kw">null</span>&gt;(<span class="kw">null</span>);
+
+  useEffect(() => {
+    <span class="cm">// Hent embed-token fra NordCRM backend</span>
+    fetch(<span class="str">'/api/v1/reports/pipeline/embed-token'</span>, {
+      headers: { Authorization: <span class="str">`Bearer ${currentUserToken}`</span> }
+    })
+    .<span class="fn">then</span>(r => r.json())
+    .<span class="fn">then</span>(data => setEmbedConfig({
+      type:        <span class="str">'report'</span>,
+      id:          data.reportId,
+      embedUrl:    data.embedUrl,
+      accessToken: data.token,
+      tokenType:   models.TokenType.Embed,
+      settings: {
+        panes: { filters: { visible: <span class="kw">false</span> } },  <span class="cm">// Skjul PBI native filter-pane</span>
+        background: models.BackgroundType.Transparent,
+        navContentPaneEnabled: <span class="kw">false</span>,
+      },
+      <span class="cm">// Sæt filtre fra NordCRM Rapporteringsfanens dropdowns</span>
+      filters: <span class="fn">buildFilters</span>(filters),
+    }));
+  }, [filters]);  <span class="cm">// Re-henter token når filtre ændres</span>
+
+  <span class="kw">if</span> (!embedConfig) <span class="kw">return</span> &lt;<span class="tag">div</span>&gt;Indlæser rapport...&lt;/<span class="tag">div</span>&gt;;
+
+  <span class="kw">return</span> (
+    &lt;<span class="tag">PowerBIEmbed</span>
+      <span class="prop">embedConfig</span>={embedConfig}
+      <span class="prop">cssClassName</span>=<span class="str">"pbi-report-frame"</span>
+      <span class="prop">getEmbeddedComponent</span>={(report: Report) => {
+        <span class="cm">// Opdatér filtre uden at hente nyt token</span>
+        report.<span class="fn">updateFilters</span>(models.FiltersOperations.ReplaceAll, <span class="fn">buildFilters</span>(filters));
+      }}
+    /&gt;
+  );
+}
+
+<span class="cm">// Konvertér NordCRM-filtre til Power BI filter-model</span>
+<span class="kw">function</span> <span class="fn">buildFilters</span>(f: ReportFilters): models.IFilter[] {
+  <span class="kw">const</span> filters: models.IFilter[] = [];
+  <span class="kw">if</span> (f.kamId)    filters.<span class="fn">push</span>({ table: <span class="str">'vw_deals'</span>, column: <span class="str">'kam_user_id'</span>, values: [f.kamId] } <span class="kw">as</span> <span class="kw">any</span>);
+  <span class="kw">if</span> (f.amId)     filters.<span class="fn">push</span>({ table: <span class="str">'vw_deals'</span>, column: <span class="str">'am_user_id'</span>,  values: [f.amId] }  <span class="kw">as</span> <span class="kw">any</span>);
+  <span class="kw">if</span> (f.stage)    filters.<span class="fn">push</span>({ table: <span class="str">'vw_deals'</span>, column: <span class="str">'stage'</span>,        values: [f.stage] }  <span class="kw">as</span> <span class="kw">any</span>);
+  <span class="kw">return</span> filters;
+}
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="step-nav">
+      <button class="nav-btn" onclick="goStep(4)">← Rapporter</button>
+      <button class="nav-btn primary" onclick="goStep(6)">RLS & sikkerhed →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STEP 6 — RLS + SECURITY
+  ══════════════════════════════ -->
+  <div class="step-section" id="step-6">
+    <div class="step-header">
+      <div class="sh-num">06 / 07</div>
+      <div>
+        <div class="sh-title">Row-Level Security & GDPR</div>
+        <div class="sh-sub">Sikr at AM kun ser egne kunder, KAM kun eget team og admin ser alt</div>
+      </div>
+      <div class="sh-time">⏱ 1 time</div>
+    </div>
+
+    <div class="rls-matrix">
+      <div class="rls-cell rls-head rls-role">Rolle</div>
+      <div class="rls-cell rls-head">Egne aftaler</div>
+      <div class="rls-cell rls-head">Team (KAM)</div>
+      <div class="rls-cell rls-head">Alle aftaler</div>
+      <div class="rls-cell rls-head">SOW alle kunder</div>
+
+      <div class="rls-cell rls-role">👤 AM</div>
+      <div class="rls-cell rls-yes">✓</div>
+      <div class="rls-cell rls-no">✗</div>
+      <div class="rls-cell rls-no">✗</div>
+      <div class="rls-cell rls-part">Kun egne</div>
+
+      <div class="rls-cell rls-role">⭐ KAM</div>
+      <div class="rls-cell rls-yes">✓</div>
+      <div class="rls-cell rls-yes">✓</div>
+      <div class="rls-cell rls-no">✗</div>
+      <div class="rls-cell rls-part">KAM's kunder</div>
+
+      <div class="rls-cell rls-role">🛡 Admin / DPO</div>
+      <div class="rls-cell rls-yes">✓</div>
+      <div class="rls-cell rls-yes">✓</div>
+      <div class="rls-cell rls-yes">✓</div>
+      <div class="rls-cell rls-yes">✓</div>
+    </div>
+
+    <span class="code-label" style="margin-top:16px">Power BI Desktop — RLS roller (Modelling → Manage Roles)</span>
+    <div class="code">
+<span class="cm">-- Rolle: AM — ser kun egne aftaler</span>
+<span class="cm">-- Tabel: vw_deals — DAX-filter</span>
+[am_user_id] <span class="op">=</span> <span class="fn">USERPRINCIPALNAME</span>()
+
+<span class="cm">-- Rolle: KAM — ser alle aftaler under sit team</span>
+<span class="cm">-- Kræver en 'user_hierarchy' tabel: kam_id → [am_id, am_id, ...]</span>
+[kam_user_id] <span class="op">=</span> <span class="fn">USERPRINCIPALNAME</span>()
+  <span class="op">||</span> [am_user_id] <span class="kw">IN</span>
+     <span class="fn">VALUES</span>(<span class="fn">FILTER</span>(user_hierarchy, user_hierarchy[kam_id] <span class="op">=</span> <span class="fn">USERPRINCIPALNAME</span>())[am_id])
+
+<span class="cm">-- Rolle: Admin — ingen filter (blank DAX = ser alt)</span>
+<span class="cm">-- (Tom fil i Manage Roles → admin-rollen)</span>
+
+<span class="cm">-- Testér RLS i Power BI Desktop:</span>
+<span class="cm">-- Modelling → View as Roles → vælg 'am' → indtast test-brugernavn</span>
+<button class="copy-btn" onclick="copyCode(this)">Kopiér</button>
+    </div>
+
+    <div class="info-box ib-green">
+      <span class="ib-title">✓ GDPR Art. 5 — Dataminimering via RLS</span>
+      <span class="ib-body">RLS er den tekniske implementering af dataminimering i Power BI. En AM har ikke adgang til andre AM'ers kundedata, selvom de forsøger at fjerne slicere eller eksportere. RLS håndhæves server-side i Power BI Premium-kapaciteten — ikke kun i UI'en.</span>
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" onclick="goStep(5)">← Embed kode</button>
+      <button class="nav-btn pbi" onclick="goStep(7)">Go-live tjekliste →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STEP 7 — GO-LIVE CHECKLIST
+  ══════════════════════════════ -->
+  <div class="step-section" id="step-7">
+    <div class="step-header">
+      <div class="sh-num">07 / 07</div>
+      <div>
+        <div class="sh-title">Go-live tjekliste</div>
+        <div class="sh-sub">Alle krav der skal være opfyldt inden Power BI aktiveres i produktion</div>
+      </div>
+      <div class="sh-time">⏱ Verifikation</div>
+    </div>
+
+    <div class="checklist">
+      <div class="cl-group-hd">Azure infrastruktur</div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Power BI Embedded A1 kapacitet provisioneret</strong><span>Region: northeurope · SKU: A1 · Mode: Gen2 · Bekræft i Azure Portal</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Synapse Link aktiveret på Cosmos DB</strong><span>Analytical storage aktiveret på: deals, contacts, accounts, users, activities</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Synapse workspace forbundet til Power BI</strong><span>Synapse Studio → Manage → Linked services → Power BI workspace linket</span></div></div>
+      <div class="cl-group-hd">Power BI konfiguration</div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Workspace oprettet i Premium-kapacitet</strong><span>"NordCRM-Rapporter" workspace tilknyttet pbinordcrmprod-kapacitet</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Service Principal tilføjet som workspace-admin</strong><span>PBI Admin Portal: Service principals can use Power BI APIs → aktiveret</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Alle 4 rapporter publiceret til workspace</strong><span>Pipeline Funnel · Vundne pr. måned · SOW oversigt · KAM/AM Dashboard</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>RLS roller defineret og testet</strong><span>am · kam · admin — testet med View as Roles for 3 testbrugere</span></div></div>
+      <div class="cl-group-hd">Sikkerhed & GDPR</div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Eksport deaktiveret for AM-rolle</strong><span>Workspace Settings → Export and sharing → Deaktivér PDF/Excel eksport for ikke-admins</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>EU Data Residency bekræftet</strong><span>PBI Admin Portal → Tenant Settings → Data residency: EU · Kapacitet: North Europe</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Audit logging aktiveret</strong><span>M365 Purview Audit aktiveret for Power BI-hændelser → eksporteres til audit_log container</span></div></div>
+      <div class="cl-group-hd">NordCRM integration</div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Token-service deployeret og testet</strong><span>Embed-token genereres korrekt for alle tre roller (am/kam/admin)</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Filtre virker fra Rapporteringsfanen</strong><span>Skift KAM-dropdown → rapport opdateres med korrekt filtrering</span></div></div>
+      <div class="cl-item"><div class="cl-box" onclick="this.classList.toggle('checked')"></div><div class="cl-txt"><strong>Token auto-refresh implementeret (1-times interval)</strong><span>Frontend kalder /embed-token-refresh inden udløb — ingen "session expired" fejl</span></div></div>
+    </div>
+
+    <div class="info-box ib-pbi" style="margin-top:16px">
+      <span class="ib-title">🎉 Power BI Embedded er klar!</span>
+      <span class="ib-body">Når alle punkter er markerede er Power BI fuldt integreret i NordCRM. Rapporterne er tilgængelige under Rapporteringsfanen og filtrerer automatisk på KAM, AM, pipeline, SOW og flådestørrelse — direkte fra Cosmos DB via Synapse Analytics.</span>
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" onclick="goStep(6)">← RLS & sikkerhed</button>
+      <button class="nav-btn" onclick="goStep(1)">↩ Start forfra</button>
+    </div>
+  </div>
+
+</div><!-- /outer -->
+
+<script>
+let currentStep = 1;
+const totalSteps = 7;
+const progress = [14,28,42,56,71,85,100];
+
+function goStep(n) {
+  document.querySelectorAll('.step-section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.ts-dot').forEach((d,i) => {
+    d.classList.remove('active');
+    if(i+1 < n) d.classList.add('done');
+    else d.classList.remove('done');
+    if(i+1 === n) d.classList.add('active');
+  });
+  document.getElementById('step-'+n).classList.add('visible');
+  document.getElementById('progressFill').style.width = progress[n-1]+'%';
+  currentStep = n;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toggleSC(head) {
+  const body = head.nextElementSibling;
+  const chev = head.querySelector('.sc-chev');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  chev.classList.toggle('open', !open);
+}
+
+function copyCode(btn) {
+  const block = btn.closest('.code');
+  const text = block.innerText.replace('Kopiér','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Kopieret';
+    setTimeout(() => btn.textContent = 'Kopiér', 2000);
+  });
+}
+</script>
+</body>
+</html>
