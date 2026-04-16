@@ -491,10 +491,18 @@ body{background:var(--canvas);color:var(--ink);font-family:'Geist',sans-serif;fo
 <div class="view" id="view-reports">
   <div class="page-head">
     <div class="page-title">Rapportering</div>
-    <div class="page-actions">
-      <select class="form-select btn btn-ghost btn-sm" id="report-kam" onchange="renderReports()" style="width:auto;padding:5px 24px 5px 8px;font-size:11px">
-        <option value="all">Alle KAM / AM</option>
+    <div class="page-actions" style="flex-wrap:wrap;gap:6px">
+      <!-- Role type filter: AM / KAM / Both -->
+      <div style="display:flex;border:1px solid var(--rule2);border-radius:6px;overflow:hidden;flex-shrink:0">
+        <button id="rft-both" onclick="setRoleFilter('both')" style="padding:5px 11px;font-size:11px;font-family:'Geist',sans-serif;border:none;cursor:pointer;background:var(--ink);color:#fff;font-weight:500;transition:all .15s">Alle</button>
+        <button id="rft-am"   onclick="setRoleFilter('am')"   style="padding:5px 11px;font-size:11px;font-family:'Geist',sans-serif;border:none;cursor:pointer;background:var(--bg);color:var(--muted);transition:all .15s;border-left:1px solid var(--rule2)">AM</button>
+        <button id="rft-kam"  onclick="setRoleFilter('kam')"  style="padding:5px 11px;font-size:11px;font-family:'Geist',sans-serif;border:none;cursor:pointer;background:var(--bg);color:var(--muted);transition:all .15s;border-left:1px solid var(--rule2)">KAM</button>
+      </div>
+      <!-- Individual person dropdown -->
+      <select class="form-select btn btn-ghost btn-sm" id="report-person" onchange="renderReports()" style="width:auto;padding:5px 24px 5px 8px;font-size:11px">
+        <option value="all">Alle personer</option>
       </select>
+      <!-- Period -->
       <select class="form-select btn btn-ghost btn-sm" id="report-period" onchange="renderReports()" style="width:auto;padding:5px 24px 5px 8px;font-size:11px">
         <option value="ytd">År til dato</option>
         <option value="q">Dette kvartal</option>
@@ -1529,47 +1537,131 @@ function saveCustomer(){
 // ═══════════════════════════════════════
 //  REPORTS
 // ═══════════════════════════════════════
-function renderReports(){
-  const kamFilter=(document.getElementById('report-kam')||{}).value||'all';
-  const period=(document.getElementById('report-period')||{}).value||'ytd';
+// role filter state
+let reportRoleFilter = 'both'; // 'both' | 'am' | 'kam'
 
-  // populate KAM filter
-  const allKAMs=[...new Set(state.customers.map(c=>c.kam).filter(Boolean))];
-  const kamSel=document.getElementById('report-kam');
-  const curVal=kamSel.value;
-  kamSel.innerHTML='<option value="all">Alle KAM / AM</option>'+allKAMs.map(k=>`<option value="${k}"${k===curVal?' selected':''}>${k}</option>`).join('');
+function setRoleFilter(role){
+  reportRoleFilter = role;
+  // update button styles
+  ['both','am','kam'].forEach(r => {
+    const btn = document.getElementById('rft-'+r);
+    if(!btn) return;
+    const active = r === role;
+    btn.style.background = active ? 'var(--ink)' : 'var(--bg)';
+    btn.style.color      = active ? '#fff'        : 'var(--muted)';
+    btn.style.fontWeight = active ? '500'          : '400';
+  });
+  // rebuild person dropdown for new role, then re-render
+  populatePersonDropdown();
+  renderReports();
+}
 
-  let deals=[...state.deals];
+function populatePersonDropdown(){
+  const sel = document.getElementById('report-person');
+  if(!sel) return;
+  const prev = sel.value;
 
-  // period filter
-  const now=new Date();
-  if(period==='ytd') deals=deals.filter(d=>new Date(d.createdAt).getFullYear()===now.getFullYear());
-  else if(period==='q'){
-    const q=Math.floor(now.getMonth()/3);
-    deals=deals.filter(d=>{ const dd=new Date(d.createdAt); return dd.getFullYear()===now.getFullYear()&&Math.floor(dd.getMonth()/3)===q; });
+  let people = [];
+  if(reportRoleFilter === 'both' || reportRoleFilter === 'am'){
+    const ams = [...new Set(state.customers.map(c=>c.am).filter(Boolean))];
+    ams.forEach(n => { if(!people.find(p=>p.name===n)) people.push({name:n, role:'am', label: n+' (AM)'}); });
   }
+  if(reportRoleFilter === 'both' || reportRoleFilter === 'kam'){
+    const kams = [...new Set(state.customers.map(c=>c.kam).filter(Boolean))];
+    kams.forEach(n => { if(!people.find(p=>p.name===n&&p.role==='kam')) people.push({name:n, role:'kam', label: n+' (KAM)'}); });
+  }
+  // dedupe names that appear in both roles
+  const seen = new Set();
+  people = people.filter(p => { const k=p.role+'_'+p.name; if(seen.has(k)) return false; seen.add(k); return true; });
+
+  const label = reportRoleFilter==='am' ? 'Alle AM\'er' : reportRoleFilter==='kam' ? 'Alle KAM\'er' : 'Alle personer';
+  sel.innerHTML = `<option value="all">${label}</option>` +
+    people.map(p => `<option value="${p.role}::${p.name}"${prev===p.role+'::'+p.name?' selected':''}>${p.label}</option>`).join('');
+}
+
+function renderReports(){
+  // Ensure dropdown is populated
+  populatePersonDropdown();
+
+  const personFilter = (document.getElementById('report-person')||{}).value || 'all';
+  const period       = (document.getElementById('report-period')||{}).value  || 'ytd';
+
+  // Parse person selection
+  let filterRole = null, filterName = null;
+  if(personFilter !== 'all'){
+    const parts = personFilter.split('::');
+    filterRole = parts[0]; // 'am' or 'kam'
+    filterName = parts[1];
+  }
+
+  let deals = [...state.deals];
+
+  // Period filter
+  const now = new Date();
+  if(period==='ytd')   deals = deals.filter(d => new Date(d.createdAt).getFullYear()===now.getFullYear());
+  else if(period==='q'){ const q=Math.floor(now.getMonth()/3); deals=deals.filter(d=>{ const dd=new Date(d.createdAt); return dd.getFullYear()===now.getFullYear()&&Math.floor(dd.getMonth()/3)===q; }); }
   else if(period==='month') deals=deals.filter(d=>{ const dd=new Date(d.createdAt); return dd.getFullYear()===now.getFullYear()&&dd.getMonth()===now.getMonth(); });
 
-  // KAM filter
-  if(kamFilter!=='all'){
-    const custIds=state.customers.filter(c=>c.kam===kamFilter||c.am===kamFilter).map(c=>c.id);
-    deals=deals.filter(d=>custIds.includes(d.customerId));
+  // Role-type + person filter
+  if(filterName){
+    // Specific person selected
+    const custIds = state.customers.filter(c =>
+      filterRole==='am'  ? c.am===filterName :
+      filterRole==='kam' ? c.kam===filterName : false
+    ).map(c=>c.id);
+    deals = deals.filter(d => custIds.includes(d.customerId));
+  } else if(reportRoleFilter !== 'both'){
+    // All AMs or all KAMs
+    const custIds = state.customers.filter(c =>
+      reportRoleFilter==='am'  ? !!c.am :
+      reportRoleFilter==='kam' ? !!c.kam : true
+    ).map(c=>c.id);
+    // For 'am' view, only show deals where the AM field is set
+    // (still show all deals for those customers since deals track owner separately)
+    deals = deals.filter(d => custIds.includes(d.customerId));
   }
 
-  const active=deals.filter(d=>d.stage!=='won'&&d.stage!=='lost');
-  const won=deals.filter(d=>d.stage==='won');
-  const pipe=active.reduce((s,d)=>s+d.value,0);
-  const wonVal=won.reduce((s,d)=>s+d.value,0);
-  const weighted=active.reduce((s,d)=>s+d.value*(d.prob/100),0);
-  const closed=deals.filter(d=>d.stage==='won'||d.stage==='lost');
-  const winRate=closed.length?Math.round(100*won.length/closed.length):0;
+  // Filter SOW customers by same logic
+  let sowCustomers = [...state.customers];
+  if(filterName){
+    sowCustomers = sowCustomers.filter(c => filterRole==='am' ? c.am===filterName : c.kam===filterName);
+  } else if(reportRoleFilter==='am'){
+    sowCustomers = sowCustomers.filter(c => !!c.am);
+  } else if(reportRoleFilter==='kam'){
+    sowCustomers = sowCustomers.filter(c => !!c.kam);
+  }
+
+  const active  = deals.filter(d=>d.stage!=='won'&&d.stage!=='lost');
+  const won     = deals.filter(d=>d.stage==='won');
+  const pipe    = active.reduce((s,d)=>s+d.value,0);
+  const wonVal  = won.reduce((s,d)=>s+d.value,0);
+  const weighted= active.reduce((s,d)=>s+d.value*(d.prob/100),0);
+  const closed  = deals.filter(d=>d.stage==='won'||d.stage==='lost');
+  const winRate = closed.length ? Math.round(100*won.length/closed.length) : 0;
+
+  // Context label for headings
+  const ctxLabel = filterName
+    ? filterName + ' ('+(filterRole==='am'?'AM':'KAM')+')'
+    : reportRoleFilter==='am' ? 'Alle AM\'er'
+    : reportRoleFilter==='kam' ? 'Alle KAM\'er'
+    : 'Alle AM / KAM';
+
+  // Update card title
+  const dealCardTitle = document.querySelector('#view-reports .card:last-child .card-title');
+  if(dealCardTitle) dealCardTitle.textContent = 'Aftaler — ' + ctxLabel;
+
+  // SOW avg for filtered customers
+  const filteredAvgSOW = (()=>{
+    const c=sowCustomers.filter(c=>c.fleet>0);
+    return c.length ? Math.round(c.reduce((s,c)=>s+(c.opendo||0)/c.fleet*100,0)/c.length) : 0;
+  })();
 
   document.getElementById('report-kpis').innerHTML=`
     <div class="kpi"><div class="kpi-label">Pipeline total</div><div class="kpi-val" style="color:var(--blue)">${fmtVal(pipe)}</div><div class="kpi-sub">${active.length} aktive aftaler</div></div>
     <div class="kpi"><div class="kpi-label">Vægtet pipeline</div><div class="kpi-val">${fmtVal(Math.round(weighted))}</div><div class="kpi-sub">sandsynlighedsjusteret</div></div>
     <div class="kpi"><div class="kpi-label">Vundne aftaler</div><div class="kpi-val" style="color:var(--green)">${fmtVal(wonVal)}</div><div class="kpi-sub">${won.length} vundet</div></div>
     <div class="kpi"><div class="kpi-label">Win rate</div><div class="kpi-val" style="color:${winRate>=50?'var(--green)':'var(--amber)'}">${winRate}%</div><div class="kpi-sub">${closed.length} afsluttede</div></div>
-    <div class="kpi"><div class="kpi-label">Gns. SOW</div><div class="kpi-val" style="color:var(--blue)">${avgSOW()}%</div><div class="kpi-sub">share of wallet</div></div>
+    <div class="kpi"><div class="kpi-label">Gns. SOW</div><div class="kpi-val" style="color:var(--blue)">${filteredAvgSOW}%</div><div class="kpi-sub">${sowCustomers.length} kunder</div></div>
     <div class="kpi"><div class="kpi-label">Antal aftaler</div><div class="kpi-val">${deals.length}</div><div class="kpi-sub">i perioden</div></div>
   `;
 
@@ -1584,27 +1676,53 @@ function renderReports(){
     return `<div class="funnel-row"><span class="fr-lbl">${st.label}</span><div class="fr-wrap"><div class="fr-bar" style="width:${pct}%;background:${st.bar}"><span class="fr-val" style="color:${s==='prospect'?'var(--ink2)':'#fff'};font-size:8px">${ds.length>0?fmtVal(val):''}</span></div></div><span class="fr-count">${ds.length}</span></div>`;
   }).join('');
 
-  // SOW table
-  document.getElementById('sow-tbody').innerHTML=state.customers.map(c=>{
-    const sow=c.fleet>0?Math.round((c.opendo||0)/c.fleet*100):0;
-    const color=sow>=25?'var(--green)':sow>=10?'var(--amber)':'var(--muted)';
-    return `<tr><td style="font-weight:500">${c.name}</td><td class="right mono">${c.fleet||0}</td><td class="right mono">${c.opendo||0}</td><td><div style="display:flex;align-items:center;gap:5px"><div style="width:${Math.min(sow,100)*0.5}px;height:4px;border-radius:2px;background:${color};min-width:2px"></div><span style="font-family:'Geist Mono',monospace;font-size:10px;color:${color};font-weight:500">${c.fleet>0?sow+'%':'—'}</span></div></td><td style="font-size:11px;color:var(--muted)">${c.kam||'—'}</td></tr>`;
-  }).join('');
+  // SOW table — filtered customers, show both AM and KAM columns
+  document.getElementById('sow-tbody').innerHTML = sowCustomers.length
+    ? sowCustomers.map(c=>{
+        const sow=c.fleet>0?Math.round((c.opendo||0)/c.fleet*100):0;
+        const color=sow>=25?'var(--green)':sow>=10?'var(--amber)':'var(--muted)';
+        const showAM  = reportRoleFilter==='both'||reportRoleFilter==='am';
+        const showKAM = reportRoleFilter==='both'||reportRoleFilter==='kam';
+        return `<tr>
+          <td style="font-weight:500">${c.name}</td>
+          <td class="right mono">${c.fleet||0}</td>
+          <td class="right mono">${c.opendo||0}</td>
+          <td><div style="display:flex;align-items:center;gap:5px"><div style="width:${Math.min(sow,100)*0.5}px;height:4px;border-radius:2px;background:${color};min-width:2px"></div><span style="font-family:'Geist Mono',monospace;font-size:10px;color:${color};font-weight:500">${c.fleet>0?sow+'%':'—'}</span></div></td>
+          ${showAM  ? `<td style="font-size:11px;color:var(--muted)">${c.am||'—'}</td>` : ''}
+          ${showKAM ? `<td style="font-size:11px;color:var(--muted)">${c.kam||'—'}</td>` : ''}
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Ingen kunder i valgt filter</td></tr>';
 
-  // All deals table
-  document.getElementById('report-tbody').innerHTML=deals.length
+  // Update SOW table headers dynamically
+  const sowHead = document.querySelector('#sow-table thead tr');
+  if(sowHead){
+    const showAM  = reportRoleFilter==='both'||reportRoleFilter==='am';
+    const showKAM = reportRoleFilter==='both'||reportRoleFilter==='kam';
+    sowHead.innerHTML = `<th>Kunde</th><th>Flåde</th><th>Opendo</th><th>SOW%</th>`
+      + (showAM  ? '<th>AM</th>'  : '')
+      + (showKAM ? '<th>KAM</th>' : '');
+  }
+
+  // Deals table — show AM/KAM col based on filter
+  document.getElementById('report-tbody').innerHTML = deals.length
     ? deals.map(d=>{
-        const c=custById(d.customerId);
+        const c = custById(d.customerId);
+        const roleInfo = reportRoleFilter==='am'
+          ? (c.am||d.owner||'—')+' <span style="color:var(--muted);font-size:9px">(AM)</span>'
+          : reportRoleFilter==='kam'
+          ? (c.kam||'—')+' <span style="color:var(--muted);font-size:9px">(KAM)</span>'
+          : (d.owner||'—')+' / '+(c.kam||'—');
         return `<tr onclick="goView('pipeline');selectDeal('${d.id}')" style="cursor:pointer">
           <td style="font-weight:500">${d.title}</td>
           <td style="color:var(--muted);font-size:11px">${c.name}</td>
           <td>${pillHtml(d.stage)}</td>
-          <td style="font-size:11px;color:var(--muted)">${d.owner||'—'}</td>
+          <td style="font-size:11px;color:var(--muted)">${roleInfo}</td>
           <td class="mono" style="font-size:11px">${fmtDate(d.closeDate)}</td>
           <td class="right mono" style="font-weight:500">${fmtVal(d.value)}</td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Ingen aftaler i valgt periode</td></tr>';
+    : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Ingen aftaler i valgt filter</td></tr>';
 }
 
 // ═══════════════════════════════════════
