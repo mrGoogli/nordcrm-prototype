@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Compliance Framework — Danish Finance Sector</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --border: #ddd9d0;
+    --text: #1a1714;
+    --muted: #7a7468;
+    --accent-red: #c0392b;
+    --accent-blue: #1a4f8a;
+    --accent-green: #1a6b4a;
+    --accent-amber: #b35a00;
+    --accent-purple: #5a2d82;
+    --tag-bg: #ede9e1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* HEADER */
+  header {
+    padding: 56px 0 40px;
+    border-bottom: 2px solid var(--text);
+    margin-bottom: 48px;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .doc-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    max-width: 600px;
+  }
+
+  .header-meta {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .risk-level {
+    display: inline-block;
+    background: var(--accent-red);
+    color: white;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .header-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .header-desc {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 600px;
+  }
+
+  /* REG BADGES ROW */
+  .reg-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .reg-badge {
+    border: 1.5px solid;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+
+  .rb-red { border-color: var(--accent-red); color: var(--accent-red); }
+  .rb-blue { border-color: var(--accent-blue); color: var(--accent-blue); }
+  .rb-green { border-color: var(--accent-green); color: var(--accent-green); }
+  .rb-amber { border-color: var(--accent-amber); color: var(--accent-amber); }
+  .rb-purple { border-color: var(--accent-purple); color: var(--accent-purple); }
+
+  /* SECTIONS */
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .s-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+
+  /* REGULATORY OVERVIEW GRID */
+  .reg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .reg-card {
+    background: var(--surface);
+    padding: 20px;
+  }
+
+  .rc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .rc-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+  }
+
+  .rc-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .status-active { background: #d4edda; color: #155724; }
+  .status-critical { background: #f8d7da; color: #721c24; }
+  .status-required { background: #fff3cd; color: #856404; }
+
+  .rc-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+  .rc-fine { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent-red); border-top: 1px solid var(--border); padding-top: 8px; }
+
+  /* REQUIREMENT TABLES */
+  .req-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .req-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px;
+    text-align: left;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .req-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  .req-table tr:last-child td { border-bottom: none; }
+  .req-table tr:hover td { background: var(--surface2); }
+
+  .req-table td:first-child {
+    font-weight: 600;
+    width: 200px;
+    font-size: 12px;
+  }
+
+  .req-table td:nth-child(2) { color: var(--text); }
+  .req-table td:nth-child(3) { color: var(--muted); font-size: 12px; min-width: 100px; }
+
+  .pill {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .pill-critical { background: #f8d7da; color: #721c24; }
+  .pill-high { background: #fff3cd; color: #856404; }
+  .pill-medium { background: #d4edda; color: #155724; }
+  .pill-required { background: #cce5ff; color: #004085; }
+
+  /* DATA FLOW */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .flow-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .flow-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .flow-items { list-style: none; }
+  .flow-items li {
+    font-size: 12px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--surface2);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .flow-items li:last-child { border-bottom: none; }
+  .flow-items li::before { content: '→'; color: var(--accent-blue); flex-shrink: 0; font-size: 11px; margin-top: 1px; }
+
+  /* CHECKLIST */
+  .checklist {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .cl-group { border-bottom: 1px solid var(--border); }
+  .cl-group:last-child { border-bottom: none; }
+
+  .cl-group-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .cl-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    transition: background 0.1s;
+  }
+
+  .cl-item:last-child { border-bottom: none; }
+  .cl-item:hover { background: var(--surface2); }
+
+  .cl-box {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    margin-top: 2px;
+    background: white;
+  }
+
+  .cl-text { font-size: 12px; line-height: 1.5; }
+  .cl-text strong { font-weight: 600; display: block; margin-bottom: 1px; }
+  .cl-text span { color: var(--muted); }
+
+  /* BREACH RESPONSE */
+  .timeline {
+    position: relative;
+    padding-left: 28px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+
+  .tl-item {
+    position: relative;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 18px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-blue);
+    background: var(--bg);
+  }
+
+  .tl-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent-red);
+    font-weight: 500;
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .tl-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .tl-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* DPO BOX */
+  .dpo-box {
+    background: var(--surface);
+    border: 2px solid var(--text);
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .dpo-section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .dpo-list { list-style: none; }
+  .dpo-list li {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 4px 0;
+    border-bottom: 1px dotted var(--border);
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .dpo-list li::before { content: '·'; position: absolute; left: 4px; color: var(--text); }
+  .dpo-list li:last-child { border-bottom: none; }
+
+  /* SUMMARY NOTICE */
+  .notice {
+    background: #fff8e6;
+    border: 1px solid #f0c040;
+    border-left: 4px solid #f0c040;
+    padding: 14px 18px;
+    font-size: 13px;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .notice strong { color: var(--accent-amber); }
+
+  /* FOOTER */
+  footer {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 2px solid var(--text);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-left { font-family: 'DM Serif Display', serif; font-size: 13px; }
+  .footer-right { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); text-align: right; }
+
+  @media (max-width: 640px) {
+    .flow-grid, .dpo-box { grid-template-columns: 1fr; }
+    .header-top { flex-direction: column; }
+    .header-meta { text-align: left; }
+    .reg-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="doc-id">CRM-COMPLIANCE-DK · v1.0 · April 2026</div>
+        <h1>Compliance Framework<br><em>Danish Financial Sector CRM</em></h1>
+      </div>
+      <div class="header-meta">
+        <div class="risk-level">⚠ High Regulatory Risk</div>
+        <div class="header-date">Finanstilsynet Supervised</div>
+      </div>
+    </div>
+    <p class="header-desc">This document defines all mandatory compliance requirements for a cloud-based CRM operating in the Danish financial sector, covering GDPR, Databeskyttelsesloven, DORA, NIS2, the Danish Financial Business Act, and AML/KYC obligations.</p>
+    <div class="reg-badges">
+      <span class="reg-badge rb-red">GDPR (EU 2016/679)</span>
+      <span class="reg-badge rb-blue">Databeskyttelsesloven</span>
+      <span class="reg-badge rb-green">DORA (Jan 2025)</span>
+      <span class="reg-badge rb-amber">NIS2-loven (Jul 2025)</span>
+      <span class="reg-badge rb-purple">Lov om Finansiel Virksomhed</span>
+      <span class="reg-badge rb-red">AML / KYC</span>
+    </div>
+  </header>
+
+  <!-- NOTICE -->
+  <div class="notice">
+    <strong>⚠ Important:</strong> The Danish financial sector operates under a <em>layered</em> regulatory stack. For financial entities, <strong>DORA supersedes NIS2</strong> as lex specialis (from 17 Jan 2025). GDPR is supplemented by <strong>Databeskyttelsesloven (Act No. 289, 2024)</strong> and sector-specific rules in the <strong>Danish Financial Business Act (Act No. 1013, 2024)</strong>. Non-compliance with DORA carries fines of up to €10M or 5% of global turnover. A qualified legal advisor (DPO + financial compliance counsel) is strongly recommended.
+  </div>
+
+  <!-- 1. REGULATORY LANDSCAPE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="s-num">01</span>
+      <h2>Applicable Regulatory Frameworks</h2>
+    </div>
+    <div class="reg-grid">
+      <div class="reg-card">
+        <div class="rc-header">
+          <div class="rc-name">GDPR</div>
+          <span class="rc-status status-active">In Force</span>
+        </div>
+        <div class="rc-desc">EU Regulation 2016/679. Core data protection law. Applies to all processing of personal data of EU residents. In Denmark, supplemented by Databeskyttelsesloven.</div>
+        <div class="rc-fine">Max fine: €20M or 4% global turnover</div>
+      </div>
+      <div class="reg-card">
+        <div class="rc-header">
+          <div class="rc-name">Databeskyttelsesloven</div>
+          <span class="rc-status status-active">Act No. 289, 2024</span>
+        </div>
+        <div class="rc-desc">Danish national supplement to GDPR. Adds specific obligations for private-sector data controllers, credit information agencies, and sector-specific processing. Enforced by Datatilsynet.</div>
+        <div class="rc-fine">Supervised by: Datatilsynet (DPA)</div>
+      </div>
+      <div class="reg-card">
+        <div class="rc-header">
+          <div class="rc-name">DORA</div>
+          <span class="rc-status status-critical">Active Jan 2025</span>
+        </div>
+        <div class="rc-desc">Digital Operational Resilience Act (EU 2022/2554). Mandatory for financial entities and their ICT third-party providers. Supersedes NIS2 for financial sector. Governs ICT risk, incident reporting, testing, and third-party oversight.</div>
+        <div class="rc-fine">Max fine: €10M or 5% global turnover · Supervised by: Finanstilsynet</div>
+      </div>
+      <div class="reg-card">
+        <div class="rc-header">
+          <div class="rc-name">NIS2-loven</div>
+          <span class="rc-status status-active">Jul 2025</span>
+        </div>
+        <div class="rc-desc">Implemented in Denmark July 2025. Sector-specific for financial digital infrastructure. For financial entities, DORA takes precedence (lex specialis). NIS2 applies to designated IT suppliers not covered by DORA.</div>
+        <div class="rc-fine">Supervised by: Digitaliseringsstyrelsen + CFCS</div>
+      </div>
+      <div class="reg-card">
+        <div class="rc-header">
+          <div class="rc-name">Lov om Finansiel Virksomhed</div>
+          <span class="rc-status status-required">Act No. 1013, 2024</span>
+        </div>
+        <div class="rc-desc">Danish Financial Business Act. Contains sector-specific data protection rules supplementing GDPR. Applies to banks, insurance companies, payment institutions, investment firms. Chapter 19c governs DORA/NIS2 implementation.</div>
+        <div class="rc-fine">Supervised by: Finanstilsynet (FSA)</div>
+      </div>
+      <div class="reg-card">
+        <div class="rc-header">
+          <div class="rc-name">AML / KYC / PSD2</div>
+          <span class="rc-status status-required">Required</span>
+        </div>
+        <div class="rc-desc">Anti-money laundering obligations, Know Your Customer requirements, and PSD2 Open Banking rules. Critical for Stacc integration. Forthcoming EU AML package will tighten requirements further.</div>
+        <div class="rc-fine">Supervised by: Finanstilsynet + SØIK</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. GDPR + DANISH REQUIREMENTS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="s-num">02</span>
+      <h2>GDPR & Databeskyttelsesloven Requirements</h2>
+    </div>
+    <table class="req-table">
+      <thead>
+        <tr>
+          <th>Requirement</th>
+          <th>CRM Implementation</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Lawful Basis per Article 6</td>
+          <td>Every data processing activity in the CRM must have a documented lawful basis (consent, contract, legal obligation, legitimate interest). Financial sector often relies on Article 6(1)(b) contract and 6(1)(c) legal obligation for client data.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Data Processing Register (RoPA)</td>
+          <td>Maintain a full Record of Processing Activities per Article 30 in the CRM system itself — every data category, processing purpose, retention period, and third-party processor listed per module (Sales, Support, Marketing).</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Data Protection Impact Assessment (DPIA)</td>
+          <td>Mandatory DPIA required before launch — Article 35 GDPR + Datatilsynet guidance. Required because the CRM processes financial personal data at scale, uses AI/profiling (lead scoring), and integrates Stacc open banking data. Datatilsynet must be consulted if high risk remains after DPIA.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Data Minimisation (Art. 5)</td>
+          <td>Collect only what is necessary per module. Marketing module must not store full financial records. Define field-level access controls so each module only accesses the data it needs. AI models must not train on more data than required.</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>Retention & Deletion</td>
+          <td>Automated data retention policies: financial client data typically 5–10 years under Danish bookkeeping law (Bogføringsloven). CRM must enforce configurable retention schedules per data type with automatic anonymisation or deletion workflows.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Data Subject Rights</td>
+          <td>Build workflows for: Right of Access (Art. 15), Right to Erasure (Art. 17), Right to Rectification (Art. 16), Right to Restriction (Art. 18), Right to Portability (Art. 20). Erasure must cascade across Cosmos DB, Blob Storage, search index, and backups.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Consent Management</td>
+          <td>Marketing module requires granular opt-in consent (not pre-ticked). Consent records must be stored with timestamp, version, and withdrawal mechanism. Withdrawals must automatically suppress contact from all campaigns.</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>Data Processor Agreements (DPA)</td>
+          <td>Written DPA required with every sub-processor: Microsoft Azure (available via Microsoft's DPA), Stacc, any AI provider (Azure OpenAI). Danish Datatilsynet standard clauses should be used or referenced. DPA terms must include Art. 28(3) requirements.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>International Data Transfers</td>
+          <td>All data must remain in EU/EEA Azure regions (North Europe / West Europe). Any transfer to US services (e.g. Azure OpenAI US endpoints) must be under EU-U.S. Data Privacy Framework adequacy decision or SCCs. Post-Schrems II: verify per vendor.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Privacy by Design & Default</td>
+          <td>All new CRM features must undergo privacy review before release. Default settings must be the most privacy-protective option. Documented in the SDLC (Software Development Lifecycle) policy.</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>AI & Profiling (Art. 22)</td>
+          <td>Lead scoring and credit risk profiling using AI requires: explicit disclosure to data subjects, human oversight option, and right to contest automated decisions. Datatilsynet is actively focused on AI/profiling enforcement in 2025–2026.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Breach Notification (72h)</td>
+          <td>Must notify Datatilsynet within 72 hours of becoming aware of a breach (Art. 33). High-risk breaches require notification to affected individuals. Build automated breach detection and reporting workflows in Azure Sentinel.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3. DORA REQUIREMENTS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="s-num">03</span>
+      <h2>DORA — Digital Operational Resilience Requirements</h2>
+    </div>
+    <table class="req-table">
+      <thead>
+        <tr>
+          <th>DORA Pillar</th>
+          <th>CRM Architecture Requirement</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ICT Risk Management Framework</td>
+          <td>Formal ICT risk policy documented at board level. CRM must have a risk register covering: data loss, system outages, third-party failures (Stacc, M365), cyber incidents. Annual review required. Azure's built-in risk tools + custom register in CRM.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Incident Classification & Reporting</td>
+          <td>Major ICT incidents must be reported to Finanstilsynet: Initial notification within 4 hours (max 24h from awareness), intermediate report within 72 hours, final report within 1 month. Build automated incident classification using Azure Monitor + SIEM. Must distinguish major vs. significant incidents per DORA RTS criteria.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Digital Operational Resilience Testing</td>
+          <td>Annual basic digital resilience testing required. For significant financial institutions: Threat-Led Penetration Testing (TLPT) every 3 years by certified external testers. CRM must be included in the test scope. Azure's penetration testing policy must be followed for cloud components.</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>Third-Party ICT Risk (Art. 28–44)</td>
+          <td>Written ICT contracts with Microsoft Azure and Stacc must include DORA Art. 30 mandatory clauses: exit strategies, audit rights, SLAs, data location, incident notification obligations. Maintain a register of all ICT third-party dependencies. Finanstilsynet may audit ICT providers.</td>
+          <td><span class="pill pill-critical">Critical</span></td>
+        </tr>
+        <tr>
+          <td>Business Continuity & Disaster Recovery</td>
+          <td>Documented BCP and DR plan for the CRM. Define RPO (Recovery Point Objective) and RTO (Recovery Time Objective). Azure geo-redundant setup: primary North Europe, secondary West Europe. Regular DR testing required (at least annually). Finanstilsynet expects board-approved BCP.</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>ICT Audit (Internal)</td>
+          <td>ICT risk management framework subject to annual internal audit. Formal follow-up process on critical findings. Audit trail for all privileged access to CRM data and infrastructure stored in Azure Monitor (min 1 year retention).</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>Supply Chain / Concentration Risk</td>
+          <td>Avoid over-dependence on single ICT provider. Assess concentration risk if both M365 and Azure are from Microsoft. Document exit strategy from key providers. Finanstilsynet and EBA are focused on cloud concentration risk in 2025–2026.</td>
+          <td><span class="pill pill-medium">Medium</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. DATA FLOWS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="s-num">04</span>
+      <h2>Personal Data Flows & Residency</h2>
+    </div>
+    <div class="flow-grid">
+      <div class="flow-box">
+        <div class="flow-title">📥 Data In — Sources</div>
+        <ul class="flow-items">
+          <li>Customer contact data entered by CRM users (Sales, Support, Marketing modules)</li>
+          <li>M365 Graph API: email metadata, calendar events, Teams meeting records</li>
+          <li>Stacc Open Banking: financial transactions, account data, credit scores (PSD2 / GDPR Art. 9 if sensitive)</li>
+          <li>Web forms / lead capture (must include GDPR consent notice)</li>
+          <li>Imported datasets (CSV/Excel) — must validate lawful basis on import</li>
+          <li>Azure AD / Entra ID: employee user data (separate controller relationship)</li>
+        </ul>
+      </div>
+      <div class="flow-box">
+        <div class="flow-title">📤 Data Out — Destinations</div>
+        <ul class="flow-items">
+          <li>Azure Cosmos DB: primary storage — EU North Europe region only</li>
+          <li>Azure Blob Storage: documents, attachments — EU region only</li>
+          <li>Azure AI Search: indexed contact/deal data — EU region</li>
+          <li>Power BI Embedded: analytics — EU region, no raw PII in reports</li>
+          <li>Azure OpenAI: AI features — must use EU-deployed endpoint, no data training retention</li>
+          <li>SharePoint/OneDrive: documents shared per deal — EU tenant required</li>
+          <li>Datatilsynet: breach notifications within 72h (mandatory)</li>
+          <li>Finanstilsynet: DORA major incident reports (mandatory)</li>
+        </ul>
+      </div>
+      <div class="flow-box">
+        <div class="flow-title">🏦 Stacc Financial Data — Special Rules</div>
+        <ul class="flow-items">
+          <li>Financial data from Stacc is processed under PSD2 and must only be accessed with explicit customer consent</li>
+          <li>Must be stored in field-encrypted Cosmos DB containers, isolated per tenant</li>
+          <li>Credit and risk data may constitute sensitive data requiring heightened Art. 9 justification</li>
+          <li>Retention limited to the purpose — cannot be used for marketing without separate consent</li>
+          <li>Stacc Data Processing Agreement must include DORA Art. 30 ICT clauses</li>
+          <li>KYC/AML data subject to separate retention rules (typically 5 years minimum under Danish AML Act)</li>
+        </ul>
+      </div>
+      <div class="flow-box">
+        <div class="flow-title">📍 Data Residency Rules</div>
+        <ul class="flow-items">
+          <li><strong>Primary:</strong> Azure North Europe (Ireland/Denmark datacenter region)</li>
+          <li><strong>DR/Backup:</strong> Azure West Europe — no data leaves EU/EEA</li>
+          <li>M365 tenant must be set to EU data boundary (Microsoft EU Data Boundary programme)</li>
+          <li>Azure OpenAI: use Sweden Central or West Europe deployments only</li>
+          <li>No personal data may transit to US endpoints without SCCs or Data Privacy Framework compliance</li>
+          <li>Regular data flow mapping (Art. 30 RoPA) must be updated when new integrations are added</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. IMPLEMENTATION CHECKLIST -->
+  <div class="section">
+    <div class="section-header">
+      <span class="s-num">05</span>
+      <h2>Compliance Implementation Checklist</h2>
+    </div>
+    <div class="checklist">
+      <div class="cl-group">
+        <div class="cl-group-header"><span>Legal & Governance</span><span>Before development starts</span></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Appoint a Data Protection Officer (DPO)</strong><span>Mandatory for financial sector entities processing personal data at scale. Register with Datatilsynet.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Conduct full DPIA (Data Protection Impact Assessment)</strong><span>Required before launch. Consult Datatilsynet if residual high risk. Document all risks and mitigations.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Establish Record of Processing Activities (RoPA)</strong><span>Art. 30 GDPR. Document every processing activity, data category, purpose, lawful basis, retention, and processors.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Sign Data Processor Agreements (DPA)</strong><span>With Microsoft Azure, Stacc, and any sub-processors. Use Datatilsynet standard clauses. Include DORA Art. 30 ICT clauses for ICT providers.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Develop ICT Risk Management Framework (DORA)</strong><span>Board-approved policy. ICT risk register, annual review cycle. Required by Finanstilsynet.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Register ICT third-party providers (DORA)</strong><span>Maintain register of all ICT vendors (Microsoft, Stacc). Include contractual DORA terms in all ICT agreements.</span></div></div>
+      </div>
+      <div class="cl-group">
+        <div class="cl-group-header"><span>Technical Architecture</span><span>Phase 1 — Foundation</span></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Deploy all infrastructure in EU Azure regions only</strong><span>North Europe + West Europe. Enforce via Azure Policy. Enable M365 EU Data Boundary.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Implement field-level encryption for financial data</strong><span>Stacc data and credit records encrypted at field level in Cosmos DB. Keys in Azure Key Vault, customer-managed keys (CMK).</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Build data retention engine</strong><span>Configurable retention schedules per data type. Automated deletion / anonymisation workflows. Bogføringsloven compliance (5-year minimum for financial records).</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Implement Data Subject Rights portal</strong><span>Self-service or admin-managed workflows for access, erasure, rectification, portability requests. Cascading deletion across all data stores including backups.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Consent management system (Marketing module)</strong><span>Granular opt-in, timestamp + version stored, withdrawal mechanism, automatic suppression from all campaigns on withdrawal.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Comprehensive audit logging</strong><span>All data access, modifications, deletions, and exports logged. Minimum 1-year retention in Azure Monitor. Immutable log storage. Required for DORA ICT audit trail.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Multi-tenant data isolation</strong><span>Strict tenant isolation at Cosmos DB container level. No cross-tenant data access possible at infrastructure level.</span></div></div>
+      </div>
+      <div class="cl-group">
+        <div class="cl-group-header"><span>Security & DORA Resilience</span><span>Phase 1–2</span></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Azure Sentinel SIEM + 72h breach detection</strong><span>Automated breach detection, classification, and Datatilsynet notification workflow. DORA incident classification per RTS criteria.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Disaster Recovery plan with defined RPO/RTO</strong><span>Document and test annually. Geo-redundant Cosmos DB failover. Board-approved. Required for DORA Art. 11.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>DORA incident reporting pipeline to Finanstilsynet</strong><span>Automated workflow: initial (4h), intermediate (72h), final (1 month) reports. Integrate with Finanstilsynet's DORA reporting portal.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Annual penetration testing</strong><span>Basic annual tests. TLPT (Threat-Led Penetration Testing) every 3 years for significant entities. Required by DORA. Azure penetration testing policy must be followed.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Conditional Access & Zero Trust</strong><span>Entra ID Conditional Access policies. MFA mandatory. Privileged Identity Management (PIM) for admin roles. Least-privilege RBAC across all CRM modules.</span></div></div>
+      </div>
+      <div class="cl-group">
+        <div class="cl-group-header"><span>AI Features (Datatilsynet Focus Area 2025–26)</span><span>Phase 3–4</span></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Disclose AI/profiling use to data subjects</strong><span>Art. 13/14 GDPR. Inform customers when their data is used for lead scoring, credit risk profiling, or automated decisions.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Human review option for AI decisions (Art. 22)</strong><span>Any automated decision with significant effect on a person must offer human review on request. Implement in lead scoring and credit risk modules.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>Azure OpenAI data processing terms</strong><span>Ensure Azure OpenAI is configured with no-training-on-prompts setting. Use EU endpoint only. Include in DPA.</span></div></div>
+        <div class="cl-item"><div class="cl-box"></div><div class="cl-text"><strong>EU AI Act compliance assessment</strong><span>EU AI Act in force Aug 2024, progressively applicable. Assess if AI features qualify as high-risk AI systems (credit scoring likely does). Plan accordingly.</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. BREACH RESPONSE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="s-num">06</span>
+      <h2>Data Breach & ICT Incident Response Timeline</h2>
+    </div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-time">T+0 — Discovery</div>
+        <div class="tl-title">Incident Detected & Classified</div>
+        <div class="tl-desc">Azure Sentinel or manual detection. Security team assesses: is this a personal data breach (GDPR) and/or a major ICT incident (DORA)? Classification documented in incident register. Incident Commander assigned.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">T+4 hours (DORA) — No later than T+24h</div>
+        <div class="tl-title">Initial DORA Notification → Finanstilsynet</div>
+        <div class="tl-desc">If classified as major ICT incident under DORA: notify Finanstilsynet via their reporting portal within 4 hours of classification (max 24h from awareness). Notify Stacc and Microsoft via contractual channels.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">T+72 hours (GDPR + DORA)</div>
+        <div class="tl-title">Datatilsynet Notification (GDPR) + DORA Intermediate Report</div>
+        <div class="tl-desc">If personal data breach: notify Datatilsynet within 72h (Art. 33 GDPR) unless breach unlikely to present risk. Simultaneously submit DORA intermediate report to Finanstilsynet with updated scope, impact, and containment measures.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">T+72h (if high risk) — GDPR Art. 34</div>
+        <div class="tl-title">Individual Notification</div>
+        <div class="tl-desc">If breach likely results in high risk to data subjects (e.g. financial data exposed): notify affected individuals without undue delay. Include what happened, what data, what they should do. No fixed deadline but must be prompt.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">T+1 month (DORA)</div>
+        <div class="tl-title">DORA Final Report → Finanstilsynet</div>
+        <div class="tl-desc">Submit final incident report within one month of incident resolution. Include root cause analysis, full impact assessment, remediation actions taken, and future prevention measures. Internal post-mortem also required.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. DPO & ROLES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="s-num">07</span>
+      <h2>Roles, Responsibilities & Authorities</h2>
+    </div>
+    <div class="dpo-box">
+      <div>
+        <div class="dpo-section-title">Required Roles</div>
+        <ul class="dpo-list">
+          <li><strong>DPO (Databeskyttelsesrådgiver)</strong> — Mandatory. Register with Datatilsynet. Independent, expert in data protection law.</li>
+          <li><strong>CISO / ICT Risk Manager</strong> — Owns DORA compliance. Reports to board. Manages ICT risk register and incident response.</li>
+          <li><strong>Compliance Officer</strong> — Financial Business Act & AML compliance. Coordinates with Finanstilsynet.</li>
+          <li><strong>Data Processor Manager</strong> — Manages third-party DPAs (Microsoft, Stacc). Monitors sub-processor compliance.</li>
+          <li><strong>Incident Commander</strong> — On-call role. Coordinates breach response across GDPR + DORA timelines.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="dpo-section-title">Regulatory Authorities</div>
+        <ul class="dpo-list">
+          <li><strong>Datatilsynet</strong> — Danish Data Protection Agency. GDPR + Databeskyttelsesloven enforcement. datatilsynet.dk</li>
+          <li><strong>Finanstilsynet</strong> — Danish FSA. DORA + Financial Business Act enforcement. finanstilsynet.dk</li>
+          <li><strong>CFCS</strong> — Centre for Cyber Security. NIS2 national hub. cfcs.dk</li>
+          <li><strong>Digitaliseringsstyrelsen</strong> — NIS2 oversight for non-financial entities. digst.dk</li>
+          <li><strong>SØIK</strong> — State Attorney for Serious Economic Crime. AML enforcement.</li>
+          <li><strong>EDPB</strong> — European Data Protection Board. Cross-border GDPR guidance.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-left">CRM Compliance Framework — Danish Finance Sector</div>
+    <div class="footer-right">
+      Version 1.0 · April 2026<br>
+      Based on: GDPR · Databeskyttelsesloven (Act 289/2024)<br>
+      DORA (EU 2022/2554) · NIS2-loven (Jul 2025)<br>
+      Lov om Finansiel Virksomhed (Act 1013/2024)<br>
+      ⚠ Not legal advice — consult qualified Danish counsel
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
