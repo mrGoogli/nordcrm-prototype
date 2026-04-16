@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NordCRM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:#f0ede6;--canvas:#e8e4db;--white:#faf8f4;--ink:#1a1714;--ink2:#2e2a26;
+  --muted:#8c8679;--rule:#d4cfc6;--rule2:#c4bfb6;
+  --blue:#1a4f8c;--blue-l:#e8f0fb;--blue-m:#b8d0f0;
+  --green:#1a6b4a;--green-l:#e6f4ee;--green-m:#a3d4bc;
+  --amber:#9a4f00;--amber-l:#fdf3e0;--amber-m:#f4c87c;
+  --red:#b91c1c;--red-l:#fde8e8;--red-m:#f4a5a5;
+  --stacc:#0e7490;--stacc-l:#e0f5f9;--stacc-m:#67e8f9;
+  --m365:#0078d4;--m365-l:#e8f3fd;
+  --shadow-sm:0 1px 3px rgba(26,23,20,.08),0 1px 2px rgba(26,23,20,.04);
+  --shadow-md:0 4px 16px rgba(26,23,20,.10),0 2px 6px rgba(26,23,20,.06);
+  --shadow-lg:0 12px 40px rgba(26,23,20,.14),0 4px 12px rgba(26,23,20,.08);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--canvas);color:var(--ink);font-family:'Geist',sans-serif;font-weight:300;font-size:13px;line-height:1.5}
+
+/* ── SHELL ── */
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:48px 1fr;height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{grid-column:1/-1;background:var(--ink);display:flex;align-items:center;padding:0 20px;gap:0;border-bottom:1px solid #2e2a26;z-index:50}
+.logo{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--white);letter-spacing:-.02em;margin-right:28px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.logo-mark{width:22px;height:22px;background:var(--blue);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-family:'Geist Mono',monospace;font-weight:500}
+.topbar-nav{display:flex;gap:0;flex:1;overflow-x:auto}
+.tn{font-size:12px;color:#6b6660;padding:0 13px;height:48px;display:flex;align-items:center;cursor:pointer;transition:color .15s;border-bottom:2px solid transparent;white-space:nowrap;font-weight:400;flex-shrink:0}
+.tn:hover{color:#a8a49e}
+.tn.active{color:var(--white);border-bottom-color:var(--blue)}
+.tb-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+.tb-av{width:28px;height:28px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer}
+.tb-btn{width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.06);color:#6b6660;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;position:relative;transition:background .15s}
+.tb-btn:hover{background:rgba(255,255,255,.1)}
+.ndot{position:absolute;top:5px;right:5px;width:6px;height:6px;background:var(--amber-m);border-radius:50%}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--white);border-right:1px solid var(--rule);overflow-y:auto;padding:12px 0}
+.sb-group{margin-bottom:4px}
+.sb-lbl{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:8px 18px 4px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:7px 18px;cursor:pointer;transition:background .12s;color:#5a5550;font-size:12.5px;font-weight:400;position:relative}
+.sb-item:hover{background:var(--bg);color:var(--ink)}
+.sb-item.active{background:var(--blue-l);color:var(--blue);font-weight:500}
+.sb-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue);border-radius:0 2px 2px 0}
+.sb-ico{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.sb-badge{margin-left:auto;background:var(--blue);color:white;font-family:'Geist Mono',monospace;font-size:9px;padding:1px 6px;border-radius:10px;font-weight:500}
+.sb-rule{height:1px;background:var(--rule);margin:8px 16px}
+.sb-dot{margin-left:auto;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── CONTENT AREA ── */
+.content-area{overflow:hidden;display:flex;flex-direction:column}
+
+/* ── VIEW SWITCHER ── */
+.view-tabs{background:var(--white);border-bottom:1px solid var(--rule);display:flex;padding:0 20px;flex-shrink:0}
+.vt{font-size:12px;color:var(--muted);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;font-weight:400}
+.vt:hover{color:var(--ink)}
+.vt.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+
+/* ── VIEWS ── */
+.view{display:none;flex:1;overflow:hidden}
+.view.visible{display:flex}
+
+/* ══════════════════════
+   MINE KUNDER VIEW
+══════════════════════ */
+.mk-layout{display:grid;grid-template-columns:280px 1fr;width:100%;overflow:hidden}
+
+.mk-list{display:flex;flex-direction:column;border-right:1px solid var(--rule);overflow:hidden}
+.mk-list-head{padding:14px 16px 10px;background:var(--white);border-bottom:1px solid var(--rule);flex-shrink:0}
+.mk-search{width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:7px 10px 7px 30px;font-size:12px;outline:none;font-family:'Geist',sans-serif;color:var(--ink);transition:border-color .15s}
+.mk-search:focus{border-color:var(--blue);background:white}
+.mk-search-wrap{position:relative}
+.mk-search-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
+.mk-list-items{flex:1;overflow-y:auto;padding:10px}
+.mk-item{padding:10px 12px;border-radius:7px;cursor:pointer;transition:all .12s;border:1px solid transparent;margin-bottom:6px}
+.mk-item:hover{background:var(--bg);border-color:var(--rule)}
+.mk-item.active{background:var(--blue-l);border-color:var(--blue-m)}
+.mki-name{font-weight:500;font-size:12.5px;margin-bottom:2px;color:var(--ink)}
+.mki-cvr{font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted)}
+.mki-row{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.mki-tag{font-size:9px;padding:1px 6px;border-radius:3px;font-family:'Geist Mono',monospace;border:1px solid}
+.t-green{color:var(--green);background:var(--green-l);border-color:var(--green-m)}
+.t-blue{color:var(--blue);background:var(--blue-l);border-color:var(--blue-m)}
+.t-amber{color:var(--amber);background:var(--amber-l);border-color:var(--amber-m)}
+.t-stacc{color:var(--stacc);background:var(--stacc-l);border-color:rgba(14,116,144,.25)}
+.t-gray{color:var(--muted);background:var(--bg);border-color:var(--rule2)}
+.t-red{color:var(--red);background:var(--red-l);border-color:var(--red-m)}
+
+/* ── CUSTOMER DETAIL ── */
+.mk-detail{overflow-y:auto;background:var(--canvas);display:flex;flex-direction:column;gap:0}
+
+.mk-detail-header{background:var(--white);border-bottom:1px solid var(--rule);padding:18px 24px 14px;flex-shrink:0;position:sticky;top:0;z-index:10}
+.mkdh-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.mkdh-title{font-family:'Fraunces',serif;font-size:21px;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+.mkdh-cvr{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px}
+.mkdh-tags{display:flex;gap:6px;flex-wrap:wrap}
+.mkdh-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* ── CUSTOMER TABS ── */
+.cust-tabs{display:flex;gap:0;padding:0 24px;background:var(--white);border-bottom:1px solid var(--rule);flex-shrink:0}
+.ct{font-size:11.5px;color:var(--muted);padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.ct:hover{color:var(--ink)}
+.ct.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+
+.cust-content{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--bg);border-bottom:1px solid var(--rule)}
+.card-head-title{font-size:11px;font-weight:500;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.card-body{padding:14px}
+
+.fg{display:grid;gap:10px}
+.fg-2{grid-template-columns:1fr 1fr}
+.fg-3{grid-template-columns:1fr 1fr 1fr}
+.fi{display:flex;flex-direction:column;gap:3px}
+.fl{font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.05em;text-transform:uppercase}
+.fv{font-size:12.5px;color:var(--ink);font-weight:400}
+.fv.mono{font-family:'Geist Mono',monospace;font-size:12px}
+.fv.big{font-family:'Fraunces',serif;font-size:18px;font-weight:500;letter-spacing:-.02em}
+
+/* ── CONTACT PERSONS ── */
+.cp-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(212,207,198,.5)}
+.cp-item:last-child{border-bottom:none}
+.cp-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;color:white}
+.cp-info{flex:1}
+.cp-name{font-weight:500;font-size:12.5px}
+.cp-role{font-size:11px;color:var(--muted)}
+.cp-contact{display:flex;gap:8px;margin-top:2px}
+.cp-link{font-size:10px;color:var(--blue);font-family:'Geist Mono',monospace;cursor:pointer}
+
+/* ── CREDIT SECTION (B2B) ── */
+.credit-track{background:var(--bg);border:1.5px dashed var(--rule2);border-radius:8px;padding:14px;position:relative}
+.credit-track-label{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.credit-external-badge{background:var(--m365-l);color:var(--m365);border:1px solid rgba(0,120,212,.2);font-size:9px;font-family:'Geist Mono',monospace;padding:2px 7px;border-radius:3px;letter-spacing:.04em}
+.credit-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.credit-note{font-size:10px;color:var(--muted);margin-top:8px;font-style:italic;line-height:1.5}
+
+/* ── OFFER MINI LIST ── */
+.offer-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;border:1px solid var(--rule);margin-bottom:6px;cursor:pointer;transition:all .12s;background:var(--white)}
+.offer-item:hover{border-color:var(--blue-m);background:var(--blue-l)}
+.offer-item:last-child{margin-bottom:0}
+.oi-num{font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;color:var(--blue);flex-shrink:0;min-width:90px}
+.oi-title{font-size:12px;flex:1;color:var(--ink2)}
+.oi-val{font-family:'Geist Mono',monospace;font-size:11px;color:var(--ink);font-weight:500;flex-shrink:0}
+.oi-stage{flex-shrink:0}
+
+/* ══════════════════════
+   PIPELINE VIEW
+══════════════════════ */
+.pipe-layout{display:grid;grid-template-columns:1fr 390px;width:100%;overflow:hidden}
+
+.deal-list-panel{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--rule)}
+.dlp-head{background:var(--white);border-bottom:1px solid var(--rule);padding:14px 18px 12px;flex-shrink:0}
+.dlp-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dlp-title{font-family:'Fraunces',serif;font-size:19px;font-weight:600;letter-spacing:-.02em}
+.dlp-actions{display:flex;gap:8px}
+.pipe-tabs{display:flex;gap:2px;flex-wrap:wrap}
+.ptab{font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.ptab:hover{background:var(--bg);color:var(--ink)}
+.ptab.active{background:var(--blue-l);color:var(--blue);font-weight:500}
+.ptab-n{background:var(--rule);color:var(--muted);font-family:'Geist Mono',monospace;font-size:9px;padding:1px 5px;border-radius:8px}
+.ptab.active .ptab-n{background:var(--blue-m);color:var(--blue)}
+
+.deals-scroll{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:7px}
+
+.deal-card{background:var(--white);border:1px solid var(--rule);border-radius:8px;padding:11px 13px;cursor:pointer;transition:all .15s;position:relative}
+.deal-card:hover{border-color:var(--blue-m);box-shadow:var(--shadow-sm)}
+.deal-card.sel{border-color:var(--blue);border-left-width:3px;background:var(--blue-l);box-shadow:var(--shadow-sm)}
+.dc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3px;gap:8px}
+.dc-title{font-weight:500;font-size:12.5px;color:var(--ink);line-height:1.3}
+.dc-val{font-family:'Geist Mono',monospace;font-size:12px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.dc-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px}
+.dc-co{font-size:11px;color:var(--muted)}
+.dc-qchip{font-family:'Geist Mono',monospace;font-size:9px;color:var(--stacc);background:var(--stacc-l);padding:2px 5px;border-radius:3px;border:1px solid rgba(14,116,144,.2);display:flex;align-items:center;gap:3px}
+.dc-qchip.ord{color:var(--green);background:var(--green-l);border-color:var(--green-m)}
+.dc-prog{margin-top:7px;height:2px;background:var(--rule);border-radius:2px;overflow:hidden}
+.dc-bar{height:100%;border-radius:2px;background:var(--blue);transition:width .3s}
+
+/* ── STAGE PILLS ── */
+.sp{font-size:9px;font-family:'Geist Mono',monospace;padding:2px 6px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase;font-weight:500;border:1px solid;white-space:nowrap}
+.sp-prospect{color:var(--muted);background:var(--bg);border-color:var(--rule2)}
+.sp-qualified{color:var(--blue);background:var(--blue-l);border-color:var(--blue-m)}
+.sp-proposal{color:#7c3aed;background:#f3ecfc;border-color:rgba(124,58,237,.25)}
+.sp-negot{color:var(--amber);background:var(--amber-l);border-color:var(--amber-m)}
+.sp-won{color:var(--green);background:var(--green-l);border-color:var(--green-m)}
+.sp-lost{color:var(--red);background:var(--red-l);border-color:var(--red-m)}
+
+/* ── DEAL DETAIL ── */
+.deal-detail{background:var(--white);overflow-y:auto;display:flex;flex-direction:column}
+.dd-head{padding:18px 18px 14px;border-bottom:1px solid var(--rule);flex-shrink:0;position:sticky;top:0;background:var(--white);z-index:10}
+.ddb{font-size:10px;color:var(--muted);margin-bottom:6px;font-family:'Geist Mono',monospace}
+.dd-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.dd-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.dd-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ── STEPPER ── */
+.stepper{display:flex;align-items:center;padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--rule);overflow-x:auto;flex-shrink:0}
+.s-step{display:flex;align-items:center;gap:0;flex-shrink:0}
+.s-dot{width:8px;height:8px;border-radius:50%;background:var(--rule2);border:2px solid var(--rule2);flex-shrink:0;cursor:pointer;transition:all .2s}
+.s-dot.done{background:var(--blue);border-color:var(--blue)}
+.s-dot.cur{background:white;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-m)}
+.s-dot.won{background:var(--green);border-color:var(--green)}
+.s-lbl{font-size:9px;margin-left:4px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.s-lbl.done{color:var(--blue)}
+.s-lbl.cur{color:var(--ink);font-weight:500}
+.s-lbl.won{color:var(--green)}
+.s-line{width:20px;height:1px;background:var(--rule2);flex-shrink:0}
+.s-line.done{background:var(--blue)}
+
+.dd-body{padding:14px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
+
+/* ── QUOTE BOX ── */
+.qbox{border:1.5px solid var(--rule2);border-radius:9px;overflow:hidden;background:var(--white);box-shadow:var(--shadow-sm)}
+.qbox-head{background:var(--ink);padding:9px 14px;display:flex;align-items:center;justify-content:space-between}
+.qbh-lbl{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:5px}
+.qbh-num{font-family:'Fraunces',serif;font-size:14px;font-weight:500;color:white;letter-spacing:-.01em}
+.qbox-body{padding:13px}
+
+/* ── QUOTE NUMBER INPUT ── */
+.qn-row{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.qn-wrap{flex:1;position:relative}
+.qn-pre{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted);pointer-events:none;user-select:none}
+.qn-in{width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:8px 10px 8px 46px;font-family:'Geist Mono',monospace;font-size:14px;font-weight:500;color:var(--ink);outline:none;transition:border-color .15s}
+.qn-in:focus{border-color:var(--blue);background:white}
+
+/* ── SYNC BARS ── */
+.sync-bar{border-radius:6px;padding:7px 11px;display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;cursor:pointer;transition:all .2s;border:1px solid}
+.sync-bar:last-child{margin-bottom:0}
+.sb-stacc{background:var(--stacc-l);border-color:rgba(14,116,144,.25)}
+.sb-m365{background:var(--m365-l);border-color:rgba(0,120,212,.25)}
+.sb-idle{background:var(--bg);border-color:var(--rule)}
+.sb-ico{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.sbi-stacc{background:rgba(14,116,144,.15)}
+.sbi-m365{background:rgba(0,120,212,.12)}
+.sbi-idle{background:var(--rule)}
+.sb-txt{flex:1}
+.sb-label{font-weight:500;color:var(--ink2);font-size:11px;display:block;line-height:1.3}
+.sb-sub{font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);display:block;margin-top:1px}
+.sync-status{font-family:'Geist Mono',monospace;font-size:9px;padding:2px 7px;border-radius:3px;flex-shrink:0;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.ss-ok{background:var(--green-l);color:var(--green);border:1px solid var(--green-m)}
+.ss-pend{background:var(--amber-l);color:var(--amber);border:1px solid var(--amber-m)}
+.ss-rdy{background:var(--blue-l);color:var(--blue);border:1px solid var(--blue-m)}
+.ss-idle{background:var(--rule);color:var(--muted);border:1px solid var(--rule2)}
+
+/* ── LINE ITEMS ── */
+.li-tbl{width:100%;border-collapse:collapse;margin-top:10px}
+.li-tbl th{font-family:'Geist Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:4px 6px;text-align:left;border-bottom:1px solid var(--rule)}
+.li-tbl th.r{text-align:right}
+.li-tbl td{padding:5px 6px;border-bottom:1px solid rgba(212,207,198,.4);font-size:11.5px;vertical-align:middle}
+.li-tbl tr:last-child td{border-bottom:none}
+.li-tbl tr:hover td{background:var(--bg)}
+.li-d{color:var(--ink)}
+.li-q{font-family:'Geist Mono',monospace;color:var(--muted);text-align:center}
+.li-p{font-family:'Geist Mono',monospace;color:var(--muted);text-align:right}
+.li-t{font-family:'Geist Mono',monospace;color:var(--ink);text-align:right;font-weight:500}
+.li-totals{padding:6px;border-top:1px solid var(--rule);margin-top:3px}
+.li-tr{display:flex;justify-content:space-between;padding:2px 0;font-size:11px}
+.li-tr-label{color:var(--muted)}
+.li-tr-val{font-family:'Geist Mono',monospace}
+.exvat-note{font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);text-align:right;margin-top:4px;letter-spacing:.04em}
+
+/* ── PUSH BUTTONS ── */
+.push-actions{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.push-btn{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;border:1.5px solid;cursor:pointer;transition:all .15s;font-size:12px;font-weight:500;font-family:'Geist',sans-serif}
+.pb-stacc{border-color:rgba(14,116,144,.4);background:var(--stacc-l);color:var(--stacc)}
+.pb-stacc:hover{background:#c5eef6;border-color:var(--stacc);box-shadow:0 2px 8px rgba(14,116,144,.15)}
+.pb-m365{border-color:rgba(0,120,212,.3);background:var(--m365-l);color:var(--m365)}
+.pb-m365:hover{background:#d0e8fa;border-color:var(--m365);box-shadow:0 2px 8px rgba(0,120,212,.15)}
+.pb-ghost{border-color:var(--rule2);background:var(--bg);color:var(--ink2)}
+.pb-ghost:hover{background:var(--rule);border-color:var(--rule2)}
+.pb-icon{width:27px;height:27px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.pbi-stacc{background:rgba(14,116,144,.15)}
+.pbi-m365{background:rgba(0,120,212,.12)}
+.pbi-ghost{background:var(--rule)}
+.pb-txt{flex:1}
+.pb-lbl{display:block;font-size:12px}
+.pb-hint{display:block;font-size:10px;opacity:.65;font-weight:300;margin-top:1px}
+.pb-arr{font-size:14px;opacity:.4}
+
+/* ── ACTIVITY FEED ── */
+.act-feed{display:flex;flex-direction:column;gap:0;position:relative}
+.act-feed::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:1px;background:var(--rule);z-index:0}
+.af-item{display:flex;gap:9px;padding:5px 0;position:relative;z-index:1}
+.af-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;border:1.5px solid var(--rule);background:var(--white)}
+.afd-blue{border-color:var(--blue-m);background:var(--blue-l)}
+.afd-green{border-color:var(--green-m);background:var(--green-l)}
+.afd-stacc{border-color:rgba(14,116,144,.3);background:var(--stacc-l)}
+.afd-m365{border-color:rgba(0,120,212,.2);background:var(--m365-l)}
+.afd-gray{border-color:var(--rule);background:var(--bg)}
+.af-text{flex:1;padding-top:2px}
+.af-main{font-size:11.5px;color:var(--ink2);line-height:1.4}
+.af-time{font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);margin-top:1px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'Geist',sans-serif;white-space:nowrap}
+.btn-primary{background:var(--ink);color:var(--white)}
+.btn-primary:hover{background:var(--ink2)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--rule)}
+.btn-ghost:hover{background:var(--bg);color:var(--ink)}
+.btn-stacc{background:var(--stacc-l);color:var(--stacc);border:1px solid rgba(14,116,144,.3)}
+.btn-stacc:hover{background:#c5eef6;border-color:var(--stacc)}
+.btn-sm{padding:4px 9px;font-size:11px}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(26,23,20,.5);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.ov.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:12px;width:480px;max-width:calc(100vw - 48px);box-shadow:var(--shadow-lg);transform:scale(.95) translateY(8px);transition:transform .25s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+.ov.open .modal{transform:scale(1) translateY(0)}
+.mh{padding:16px 20px 12px;border-bottom:1px solid var(--rule);display:flex;align-items:flex-start;justify-content:space-between}
+.mh-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;letter-spacing:-.02em}
+.mh-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.m-close{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:2px 6px;border-radius:4px;transition:background .15s;line-height:1}
+.m-close:hover{background:var(--bg);color:var(--ink)}
+.mb{padding:18px 20px}
+.mf{padding:12px 20px;border-top:1px solid var(--rule);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── FLOW STEPS ── */
+.flow-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.fs-step{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:7px;border:1.5px solid var(--rule);background:var(--bg);transition:all .3s}
+.fs-step.cur{border-color:var(--blue);background:var(--blue-l)}
+.fs-step.done{border-color:var(--green-m);background:var(--green-l)}
+.fs-num{width:23px;height:23px;border-radius:50%;background:var(--rule);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;transition:all .3s}
+.fs-step.cur .fs-num{background:var(--blue);color:white}
+.fs-step.done .fs-num{background:var(--green);color:white}
+.fs-txt{flex:1}
+.fs-lbl{font-size:12px;font-weight:500}
+.fs-hint{font-size:10px;color:var(--muted);margin-top:1px}
+.fs-chk{font-size:14px;opacity:0;transition:opacity .3s}
+.fs-step.done .fs-chk{opacity:1}
+
+/* ── NEW DEAL MODAL FORM ── */
+.form-row{margin-bottom:10px}
+.form-lbl{font-size:10px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;display:block}
+.form-in{width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:7px 10px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--ink);outline:none;transition:border-color .15s}
+.form-in:focus{border-color:var(--blue);background:white}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238c8679'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.manual-badge{background:var(--amber-l);color:var(--amber);border:1px solid var(--amber-m);font-size:10px;font-family:'Geist Mono',monospace;padding:3px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;margin-bottom:12px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--white);border-radius:8px;padding:11px 15px;display:flex;align-items:center;gap:10px;font-size:12.5px;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:1000;max-width:320px;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1;pointer-events:all}
+.t-ico{width:27px;height:27px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ti-stacc{background:rgba(14,116,144,.3)}
+.ti-m365{background:rgba(0,120,212,.25)}
+.ti-ok{background:rgba(26,107,74,.3)}
+.t-txt{flex:1}
+.t-title{font-weight:500;font-size:12.5px}
+.t-sub{font-size:10px;opacity:.6;margin-top:1px}
+
+/* ── MISC ── */
+.pulse{width:6px;height:6px;border-radius:50%;animation:pulse 1.8s ease-in-out infinite}
+.pg{background:var(--green)}
+.pa{background:var(--amber)}
+.pb{background:var(--blue)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:3px}
+.divider{height:1px;background:var(--rule);margin:4px 0}
+.stacc-incoming-badge{display:inline-flex;align-items:center;gap:5px;background:var(--stacc-l);color:var(--stacc);border:1px solid rgba(14,116,144,.25);font-family:'Geist Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:.04em}
+/* ── FLEET / SOW ── */
+.fleet-in{width:100%;background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:6px 9px;font-family:'Geist Mono',monospace;font-size:13px;font-weight:500;color:var(--ink);outline:none;transition:border-color .15s;margin-top:2px}
+.fleet-in:focus{border-color:var(--blue);background:white}
+.sow-display{margin-top:2px}
+.sow-pct{font-family:'Fraunces',serif;font-size:20px;font-weight:500;letter-spacing:-.02em;color:var(--blue);display:block;line-height:1.1;margin-bottom:5px}
+.sow-bar-track{height:5px;background:var(--rule);border-radius:3px;overflow:hidden}
+.sow-bar-fill{height:100%;border-radius:3px;background:var(--blue);transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+/* ── AM / KAM ── */
+.am-box{display:flex;align-items:flex-start;gap:10px}
+.am-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;color:white}
+.am-info{flex:1;display:flex;flex-direction:column;gap:4px}
+.am-in{width:100%;background:transparent;border:none;border-bottom:1px solid var(--rule);padding:3px 0;font-family:'Geist',sans-serif;font-size:12.5px;font-weight:500;color:var(--ink);outline:none;transition:border-color .15s}
+.am-in:focus{border-bottom-color:var(--blue)}
+.am-in-sub{font-size:11px;font-weight:300;color:var(--muted)}
+
+/* ── RAPPORT VIEW ── */
+.rp-layout{display:flex;flex-direction:column;width:100%;overflow:hidden}
+.rp-filters{background:var(--white);border-bottom:1px solid var(--rule);padding:12px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.rp-filter-label{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);flex-shrink:0}
+.rp-select{background:var(--bg);border:1.5px solid var(--rule2);border-radius:6px;padding:5px 26px 5px 10px;font-family:'Geist',sans-serif;font-size:12px;color:var(--ink);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238c8679'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border-color .15s;min-width:150px}
+.rp-select:focus{border-color:var(--blue)}
+.rp-divider{width:1px;height:22px;background:var(--rule);flex-shrink:0}
+.rp-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.rp-embed{background:var(--white);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.rp-embed-head{padding:12px 18px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;background:var(--bg)}
+.rph-title{font-size:12px;font-weight:500;color:var(--ink2);display:flex;align-items:center;gap:7px}
+.rph-badge{font-family:'Geist Mono',monospace;font-size:9px;padding:2px 7px;border-radius:3px;background:var(--m365-l);color:var(--m365);border:1px solid rgba(0,120,212,.2)}
+.rph-actions{display:flex;gap:6px}
+.rp-frame{background:var(--canvas);min-height:320px;display:flex;align-items:stretch;position:relative;overflow:hidden}
+.rp-pbi-placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:linear-gradient(145deg,#f0ede6 0%,#e8e4db 100%)}
+.rp-pbi-icon{font-size:36px;opacity:.4}
+.rp-pbi-txt{font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+.rp-pbi-url{font-family:'Geist Mono',monospace;font-size:10px;color:var(--blue);background:var(--blue-l);padding:6px 12px;border-radius:5px;border:1px solid var(--blue-m);cursor:pointer;transition:background .15s}
+.rp-pbi-url:hover{background:var(--blue-m)}
+
+/* ── KPI ROW ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.kpi-card{background:var(--white);border:1px solid var(--rule);border-radius:8px;padding:14px;transition:box-shadow .15s}
+.kpi-card:hover{box-shadow:var(--shadow-sm)}
+.kpi-label{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.kpi-val{font-family:'Fraunces',serif;font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.kpi-delta{font-family:'Geist Mono',monospace;font-size:9px;padding:1px 5px;border-radius:3px}
+.kd-up{background:var(--green-l);color:var(--green)}
+.kd-down{background:var(--red-l);color:var(--red)}
+.kd-flat{background:var(--bg);color:var(--muted)}
+
+/* ── MINI CHART ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-card{background:var(--white);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.chart-head{padding:10px 14px;border-bottom:1px solid var(--rule);background:var(--bg);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:space-between}
+.chart-body{padding:14px}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px}
+.bc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bc-bar{width:100%;border-radius:3px 3px 0 0;transition:height .5s cubic-bezier(.4,0,.2,1)}
+.bc-lbl{font-family:'Geist Mono',monospace;font-size:8px;color:var(--muted);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:100%;text-align:center}
+.bc-val{font-family:'Geist Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:2px}
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1}
+.dl-item{display:flex;align-items:center;gap:6px;font-size:11px}
+.dl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dl-label{flex:1;color:var(--ink2)}
+.dl-val{font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted)}
+.pipeline-funnel{display:flex;flex-direction:column;gap:4px}
+.pf-row{display:flex;align-items:center;gap:8px;font-size:11px}
+.pf-label{width:80px;color:var(--muted);font-size:10px;text-align:right;flex-shrink:0}
+.pf-bar-wrap{flex:1;height:18px;background:var(--bg);border-radius:3px;overflow:hidden}
+.pf-bar{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;padding-left:6px}
+.pf-bar-lbl{font-family:'Geist Mono',monospace;font-size:9px;color:white;font-weight:500}
+.pf-count{font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);flex-shrink:0;width:40px;text-align:right}
+.sow-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.sow-table th{font-family:'Geist Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:5px 8px;text-align:left;border-bottom:1px solid var(--rule)}
+.sow-table th.r{text-align:right}
+.sow-table td{padding:6px 8px;border-bottom:1px solid rgba(212,207,198,.4);vertical-align:middle}
+.sow-table tr:last-child td{border-bottom:none}
+.sow-table tr:hover td{background:var(--bg)}
+.sow-table td.r{text-align:right;font-family:'Geist Mono',monospace;font-size:11px}
+.sow-mini-bar{height:5px;border-radius:3px;background:var(--blue);transition:width .5s}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-mark">N</div>NordCRM</div>
+  <div class="topbar-nav">
+    <div class="tn" onclick="switchMain('overview')">Oversigt</div>
+    <div class="tn active" id="tn-pipeline" onclick="switchMain('pipeline')">Pipeline</div>
+    <div class="tn" id="tn-kunder" onclick="switchMain('kunder')">Mine Kunder</div>
+    <div class="tn" onclick="switchMain('support')">Support</div>
+    <div class="tn" onclick="switchMain('marketing')">Marketing</div>
+    <div class="tn" id="tn-rapport" onclick="switchMain('rapport')">Rapportering</div>
+  </div>
+  <div class="tb-right">
+    <div class="stacc-incoming-badge" id="staccIncoming" onclick="handleStaccIncoming()" title="Nyt tilbud modtaget fra Stacc">⬡ Nyt tilbud fra Stacc</div>
+    <div class="tb-btn">🔔<div class="ndot"></div></div>
+    <div class="tb-av">AJ</div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-group">
+    <div class="sb-lbl">Pipeline</div>
+    <div class="sb-item" onclick="switchMain('pipeline')"><span class="sb-ico">◈</span>Alle aftaler<span class="sb-badge">14</span></div>
+    <div class="sb-item active" id="sb-mine" onclick="switchMain('pipeline')"><span class="sb-ico">◇</span>Mine aftaler<span class="sb-badge">6</span></div>
+    <div class="sb-item" onclick="switchMain('pipeline')"><span class="sb-ico">📄</span>Tilbud sendt</div>
+    <div class="sb-item" onclick="switchMain('pipeline')"><span class="sb-ico">★</span>Vundne aftaler</div>
+  </div>
+  <div class="sb-rule"></div>
+  <div class="sb-group">
+    <div class="sb-lbl">Mine Kunder</div>
+    <div class="sb-item" onclick="switchMain('kunder')"><span class="sb-ico">🏢</span>Alle kunder</div>
+    <div class="sb-item" onclick="switchMain('kunder')"><span class="sb-ico">⭐</span>Nøglekunder</div>
+  </div>
+  <div class="sb-rule"></div>
+  <div class="sb-group">
+    <div class="sb-lbl">Integrationer</div>
+    <div class="sb-item"><span class="sb-ico">⬡</span>Stacc Cloud<span class="sb-dot" style="background:var(--green)"></span></div>
+    <div class="sb-item"><span class="sb-ico">⊞</span>M365 Dynamics</div>
+    <div class="sb-item"><span class="sb-ico">📦</span>Ordrer</div>
+  </div>
+  <div class="sb-rule"></div>
+  <div class="sb-group">
+    <div class="sb-lbl">GDPR</div>
+    <div class="sb-item"><span class="sb-ico">🛡</span>Audit log</div>
+  </div>
+</div>
+
+<!-- CONTENT AREA -->
+<div class="content-area">
+
+  <!-- VIEW SWITCHER TABS -->
+  <div class="view-tabs">
+    <div class="vt active" id="vt-pipeline" onclick="showView('pipeline')">Pipeline</div>
+    <div class="vt" id="vt-kunder" onclick="showView('kunder')">Mine Kunder</div>
+    <div class="vt" id="vt-rapport" onclick="showView('rapport')">Rapportering</div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       PIPELINE VIEW
+  ═══════════════════════════════ -->
+  <div class="view visible" id="view-pipeline">
+    <div class="pipe-layout">
+
+      <!-- Deal List -->
+      <div class="deal-list-panel">
+        <div class="dlp-head">
+          <div class="dlp-row1">
+            <div class="dlp-title">Mine aftaler</div>
+            <div class="dlp-actions">
+              <button class="btn btn-ghost btn-sm">Filter</button>
+              <button class="btn btn-primary btn-sm" onclick="openNewDeal()">+ Ny aftale</button>
+            </div>
+          </div>
+          <div class="pipe-tabs">
+            <div class="ptab active">Alle <span class="ptab-n">6</span></div>
+            <div class="ptab">Prospect <span class="ptab-n">1</span></div>
+            <div class="ptab">Tilbud <span class="ptab-n">2</span></div>
+            <div class="ptab">Forhandling <span class="ptab-n">2</span></div>
+            <div class="ptab">Vundet <span class="ptab-n">1</span></div>
+          </div>
+        </div>
+        <div class="deals-scroll">
+
+          <div class="deal-card sel" onclick="selDeal(0)">
+            <div class="dc-top"><div class="dc-title">Portefølje upgrade & rådgivning</div><div class="dc-val">250.000 kr</div></div>
+            <div class="dc-meta"><span class="dc-co">Nordvest Invest A/S</span><span class="sp sp-negot">Forhandling</span><span class="dc-qchip">⬡ QUO-2026-0047</span></div>
+            <div class="dc-prog"><div class="dc-bar" style="width:75%;background:var(--amber)"></div></div>
+          </div>
+
+          <div class="deal-card" onclick="selDeal(1)">
+            <div class="dc-top"><div class="dc-title">Virksomhedslån — ekspansion 2026</div><div class="dc-val">1.200.000 kr</div></div>
+            <div class="dc-meta"><span class="dc-co">TechFlow Danmark ApS</span><span class="sp sp-negot">Forhandling</span><span class="dc-qchip">⬡ QUO-2026-0038</span></div>
+            <div class="dc-prog"><div class="dc-bar" style="width:80%;background:var(--amber)"></div></div>
+          </div>
+
+          <div class="deal-card" onclick="selDeal(2)">
+            <div class="dc-top"><div class="dc-title">Erhvervsforsikring — samlet pakke</div><div class="dc-val">48.000 kr</div></div>
+            <div class="dc-meta"><span class="dc-co">Lars Møller Holding ApS</span><span class="sp sp-proposal">Tilbud sendt</span><span class="dc-qchip">⬡ QUO-2026-0051</span></div>
+            <div class="dc-prog"><div class="dc-bar" style="width:55%"></div></div>
+          </div>
+
+          <div class="deal-card" onclick="selDeal(3)">
+            <div class="dc-top"><div class="dc-title">Formueforvaltning onboarding</div><div class="dc-val">85.000 kr</div></div>
+            <div class="dc-meta"><span class="dc-co">Bakke & Hansen Snedkeri ApS</span><span class="sp sp-qualified">Kvalificeret</span></div>
+            <div class="dc-prog"><div class="dc-bar" style="width:40%"></div></div>
+          </div>
+
+          <div class="deal-card" onclick="selDeal(4)" id="dc-won">
+            <div class="dc-top"><div class="dc-title">Refinansiering — erhvervsejendom</div><div class="dc-val">320.000 kr</div></div>
+            <div class="dc-meta"><span class="dc-co">HBK Ejendomme A/S</span><span class="sp sp-won">✓ Vundet</span><span class="dc-qchip ord">✓ ORD-2026-0029</span></div>
+            <div class="dc-prog"><div class="dc-bar" style="width:100%;background:var(--green)"></div></div>
+          </div>
+
+          <div class="deal-card" onclick="selDeal(5)">
+            <div class="dc-top"><div class="dc-title">Virksomhedspension — SMV pakke</div><div class="dc-val">28.000 kr</div></div>
+            <div class="dc-meta"><span class="dc-co">Clausen Transport ApS</span><span class="sp sp-prospect">Prospect</span></div>
+            <div class="dc-prog"><div class="dc-bar" style="width:15%"></div></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Deal Detail -->
+      <div class="deal-detail">
+        <div class="dd-head">
+          <div class="ddb">Pipeline › Mine aftaler</div>
+          <div class="dd-title-row">
+            <div class="dd-title">Portefølje upgrade<br>& rådgivning</div>
+            <button class="btn btn-ghost btn-sm">⋯</button>
+          </div>
+          <div class="dd-meta">
+            <span class="sp sp-negot">Forhandling</span>
+            <span style="font-size:11px;color:var(--muted)">Closes: 30 jun 2026</span>
+            <span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted);margin-left:auto">75% sandsynlighed</span>
+          </div>
+        </div>
+
+        <div class="stepper" id="mainStepper">
+          <div class="s-step"><div class="s-dot done"></div><span class="s-lbl done">Prospect</span></div>
+          <div class="s-line done"></div>
+          <div class="s-step"><div class="s-dot done"></div><span class="s-lbl done">Kvalificeret</span></div>
+          <div class="s-line done"></div>
+          <div class="s-step"><div class="s-dot done"></div><span class="s-lbl done">Tilbud</span></div>
+          <div class="s-line done"></div>
+          <div class="s-step"><div class="s-dot cur"></div><span class="s-lbl cur">Forhandling</span></div>
+          <div class="s-line"></div>
+          <div class="s-step"><div class="s-dot"></div><span class="s-lbl">Vundet</span></div>
+        </div>
+
+        <div class="dd-body">
+
+          <!-- QUOTE BOX -->
+          <div class="qbox">
+            <div class="qbox-head">
+              <div class="qbh-lbl">📄 Tilbud / Ordrenummer</div>
+              <div class="qbh-num" id="qbhNum">QUO-2026-0047</div>
+            </div>
+            <div class="qbox-body">
+
+              <div class="qn-row">
+                <div class="qn-wrap">
+                  <span class="qn-pre">QUO–</span>
+                  <input class="qn-in" id="quoteInput" value="2026-0047" oninput="onQChange(this.value)" title="Tilbudsnummer"/>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="autoNum()">↻ Auto</button>
+                <button class="btn btn-stacc btn-sm" onclick="openStacc()">⬡ Synk</button>
+              </div>
+
+              <!-- STACC SYNC (bidirectional) -->
+              <div class="sync-bar sb-stacc" onclick="openStacc()">
+                <div class="sb-ico sbi-stacc">⬡</div>
+                <div class="sb-txt">
+                  <span class="sb-label">Stacc Cloud — tovejs synk</span>
+                  <span class="sb-sub" id="staccSubTxt">Sidst synk: 09:14 i dag · Stacc → CRM aktiv</span>
+                </div>
+                <div class="sync-status ss-ok" id="staccStatusBadge"><div class="pulse pg"></div>Synkroniseret</div>
+              </div>
+
+              <!-- M365 -->
+              <div class="sync-bar sb-m365" onclick="openM365()">
+                <div class="sb-ico sbi-m365">⊞</div>
+                <div class="sb-txt">
+                  <span class="sb-label">M365 Dynamics 365 — ordre ved aftalelukning</span>
+                  <span class="sb-sub" id="m365SubTxt">Klar til konvertering — push som salgsordre når aftale vindes</span>
+                </div>
+                <div class="sync-status ss-rdy" id="m365StatusBadge"><div class="pulse pb"></div>Klar</div>
+              </div>
+
+              <!-- Line items excl. VAT -->
+              <table class="li-tbl">
+                <thead>
+                  <tr>
+                    <th>Beskrivelse</th>
+                    <th style="text-align:center">Antal</th>
+                    <th class="r">Enhedspris</th>
+                    <th class="r">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td class="li-d">Porteføljeanalyse & strategi</td><td class="li-q">1</td><td class="li-p">45.000</td><td class="li-t">45.000</td></tr>
+                  <tr><td class="li-d">Rådgivningsforløb (12 mdr.)</td><td class="li-q">12</td><td class="li-p">15.000</td><td class="li-t">180.000</td></tr>
+                  <tr><td class="li-d">Opsætning & onboarding</td><td class="li-q">1</td><td class="li-p">25.000</td><td class="li-t">25.000</td></tr>
+                </tbody>
+              </table>
+              <div class="li-totals">
+                <div class="li-tr"><span class="li-tr-label">Total</span><span class="li-tr-val" style="font-size:13px;font-weight:600;font-family:'Fraunces',serif">250.000 kr</span></div>
+              </div>
+              <div class="exvat-note">Alle beløb er ekskl. moms</div>
+
+              <!-- Actions -->
+              <div class="push-actions">
+                <button class="push-btn pb-stacc" onclick="openStacc()">
+                  <div class="pb-icon pbi-stacc">⬡</div>
+                  <div class="pb-txt"><span class="pb-lbl">Synk tilbud ↔ Stacc Cloud</span><span class="pb-hint">Send opdateringer til Stacc · modtag ændringer tilbage</span></div>
+                  <span class="pb-arr">⇄</span>
+                </button>
+                <button class="push-btn pb-m365" onclick="openM365()">
+                  <div class="pb-icon pbi-m365">⊞</div>
+                  <div class="pb-txt"><span class="pb-lbl">Konvertér tilbud → ordre i M365</span><span class="pb-hint">Opret salgsordre i Dynamics 365 Business Central</span></div>
+                  <span class="pb-arr">→</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Deal info -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">◇ Aftaledetaljer</div></div>
+            <div class="card-body">
+              <div class="fg fg-2">
+                <div class="fi"><span class="fl">Aftaleværdi</span><span class="fv big">250.000 kr</span></div>
+                <div class="fi"><span class="fl">Sandsynlighed</span><span class="fv big" style="color:var(--amber)">75%</span></div>
+                <div class="fi"><span class="fl">Ansvarlig</span><span class="fv">Anna Jensen</span></div>
+                <div class="fi"><span class="fl">Forventet lukning</span><span class="fv mono">30 jun 2026</span></div>
+                <div class="fi"><span class="fl">Kunde</span><span class="fv">Nordvest Invest A/S</span></div>
+                <div class="fi"><span class="fl">CVR</span><span class="fv mono">28 44 77 12</span></div>
+              </div>
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);margin-top:8px;text-align:right">Alle beløb ekskl. moms</div>
+            </div>
+          </div>
+
+          <!-- Activity -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-head-title">⌚ Aktivitet</div>
+              <button class="btn btn-ghost btn-sm">+ Log</button>
+            </div>
+            <div class="card-body">
+              <div class="act-feed" id="actFeed">
+                <div class="af-item"><div class="af-dot afd-stacc">⬡</div><div class="af-text"><div class="af-main">Stacc → CRM: Tilbud QUO-2026-0047 opdateret — beløb justeret til 250.000 kr</div><div class="af-time">I dag, 09:14</div></div></div>
+                <div class="af-item"><div class="af-dot afd-blue">📞</div><div class="af-text"><div class="af-main">Opkald: Forhandling om rådgivningspris — 24 min</div><div class="af-time">I går, 14:30</div></div></div>
+                <div class="af-item"><div class="af-dot afd-m365">⊞</div><div class="af-text"><div class="af-main">M365: Tilbud QUO-2026-0047 sendt via Outlook til Nordvest Invest</div><div class="af-time">12 apr, 11:05</div></div></div>
+                <div class="af-item"><div class="af-dot afd-stacc">⬡</div><div class="af-text"><div class="af-main">Stacc Cloud: Tilbud QUO-2026-0047 registreret i Stacc Xchange</div><div class="af-time">08 apr, 10:22</div></div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       MINE KUNDER VIEW
+  ═══════════════════════════════ -->
+  <div class="view" id="view-kunder">
+    <div class="mk-layout">
+
+      <!-- Customer List -->
+      <div class="mk-list">
+        <div class="mk-list-head">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-family:'Fraunces',serif;font-size:17px;font-weight:600;letter-spacing:-.02em">Mine Kunder</div>
+            <button class="btn btn-primary btn-sm" onclick="toast('ok','Ny kunde','Åbner oprettelsesformular...')">+ Ny</button>
+          </div>
+          <div class="mk-search-wrap">
+            <span class="mk-search-ico">🔍</span>
+            <input class="mk-search" placeholder="Søg navn, CVR, branche..."/>
+          </div>
+        </div>
+        <div class="mk-list-items">
+
+          <div class="mk-item active" onclick="selCustomer(0)">
+            <div class="mki-name">Nordvest Invest A/S</div>
+            <div class="mki-cvr">CVR 28 44 77 12</div>
+            <div class="mki-row">
+              <span class="mki-tag t-green">Aktiv kunde</span>
+              <span class="mki-tag t-stacc">⬡ Stacc</span>
+              <span class="mki-tag t-blue">2 tilbud</span>
+            </div>
+          </div>
+
+          <div class="mk-item" onclick="selCustomer(1)">
+            <div class="mki-name">TechFlow Danmark ApS</div>
+            <div class="mki-cvr">CVR 39 12 84 05</div>
+            <div class="mki-row">
+              <span class="mki-tag t-green">Aktiv kunde</span>
+              <span class="mki-tag t-amber">Kredit: Under vurdering</span>
+            </div>
+          </div>
+
+          <div class="mk-item" onclick="selCustomer(2)">
+            <div class="mki-name">Lars Møller Holding ApS</div>
+            <div class="mki-cvr">CVR 34 77 20 18</div>
+            <div class="mki-row">
+              <span class="mki-tag t-blue">Prospect</span>
+              <span class="mki-tag t-gray">1 tilbud</span>
+            </div>
+          </div>
+
+          <div class="mk-item" onclick="selCustomer(3)">
+            <div class="mki-name">HBK Ejendomme A/S</div>
+            <div class="mki-cvr">CVR 22 56 41 99</div>
+            <div class="mki-row">
+              <span class="mki-tag t-green">Aktiv kunde</span>
+              <span class="mki-tag t-green">✓ Ordre vundet</span>
+            </div>
+          </div>
+
+          <div class="mk-item" onclick="selCustomer(4)">
+            <div class="mki-name">Bakke & Hansen Snedkeri ApS</div>
+            <div class="mki-cvr">CVR 41 03 58 27</div>
+            <div class="mki-row">
+              <span class="mki-tag t-gray">Ny kontakt</span>
+              <span class="mki-tag t-gray">Ingen tilbud endnu</span>
+            </div>
+          </div>
+
+          <div class="mk-item" onclick="selCustomer(5)">
+            <div class="mki-name">Clausen Transport ApS</div>
+            <div class="mki-cvr">CVR 30 92 14 63</div>
+            <div class="mki-row">
+              <span class="mki-tag t-blue">Prospect</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Customer Detail -->
+      <div class="mk-detail">
+
+        <div class="mk-detail-header">
+          <div class="mkdh-top">
+            <div>
+              <div class="mkdh-title">Nordvest Invest A/S</div>
+              <div class="mkdh-cvr">CVR 28 44 77 12 · Investering & formueforvaltning</div>
+            </div>
+            <div class="mkdh-actions">
+              <button class="btn btn-ghost btn-sm">✏ Rediger</button>
+              <button class="btn btn-primary btn-sm" onclick="openNewDeal()">+ Tilbud</button>
+            </div>
+          </div>
+          <div class="mkdh-tags">
+            <span class="mki-tag t-green">Aktiv kunde</span>
+            <span class="mki-tag t-stacc">⬡ Stacc tilsluttet</span>
+            <span class="mki-tag t-blue">M365 synk aktiv</span>
+            <span class="mki-tag t-amber">2 aktive tilbud</span>
+          </div>
+        </div>
+
+        <!-- Customer sub-tabs -->
+        <div class="cust-tabs">
+          <div class="ct active" onclick="selCustTab(0,this)">Stamdata</div>
+          <div class="ct" onclick="selCustTab(1,this)">Kontaktpersoner</div>
+          <div class="ct" onclick="selCustTab(2,this)">Tilbud & Aftaler</div>
+          <div class="ct" onclick="selCustTab(3,this)">Strategi</div>
+          <div class="ct" onclick="selCustTab(4,this)">Kredit (B2B)</div>
+        </div>
+
+        <!-- TAB CONTENT -->
+        <div id="cust-tab-0" class="cust-content">
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">🏢 Virksomhedsinfo</div><button class="btn btn-ghost btn-sm">✏</button></div>
+            <div class="card-body">
+              <div class="fg fg-2">
+                <div class="fi"><span class="fl">Fuldt navn</span><span class="fv">Nordvest Invest A/S</span></div>
+                <div class="fi"><span class="fl">CVR nummer</span><span class="fv mono">28 44 77 12</span></div>
+                <div class="fi"><span class="fl">Virksomhedstype</span><span class="fv">Aktieselskab (A/S)</span></div>
+                <div class="fi"><span class="fl">Branche (NACE)</span><span class="fv">6499 — Finansiel formidling</span></div>
+                <div class="fi"><span class="fl">Størrelse</span><span class="fv">Medium (50–249 ansatte)</span></div>
+                <div class="fi"><span class="fl">Stiftet</span><span class="fv mono">14 mar 2008</span></div>
+                <div class="fi"><span class="fl">Adresse</span><span class="fv">Amaliegade 22, 1256 København K</span></div>
+                <div class="fi"><span class="fl">Hjemmeside</span><span class="fv" style="color:var(--blue);cursor:pointer">nordvestinvest.dk</span></div>
+                <div class="fi"><span class="fl">Kunde siden</span><span class="fv mono">03 feb 2024</span></div>
+                <div class="fi"><span class="fl">Tegningsberettiget</span><span class="fv">Louise Holm (CEO)</span></div>
+              </div>
+
+              <div style="height:1px;background:var(--rule);margin:14px 0"></div>
+
+              <!-- FLEET SECTION -->
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Flåde & SOW</div>
+              <div class="fg fg-3" style="margin-bottom:10px">
+                <div class="fi">
+                  <span class="fl">Flåde størrelse</span>
+                  <input class="fleet-in" id="fleetTotal" type="number" value="100" oninput="calcSOW()" placeholder="0"/>
+                </div>
+                <div class="fi">
+                  <span class="fl">Opendo flåde</span>
+                  <input class="fleet-in" id="fleetOpendo" type="number" value="10" oninput="calcSOW()" placeholder="0"/>
+                </div>
+                <div class="fi">
+                  <span class="fl">SOW (share of wallet)</span>
+                  <div class="sow-display" id="sowDisplay">
+                    <span class="sow-pct" id="sowPct">10%</span>
+                    <div class="sow-bar-track"><div class="sow-bar-fill" id="sowBar" style="width:10%"></div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="fi" style="max-width:50%">
+                <span class="fl">Flåde ansvarlig</span>
+                <input class="fleet-in" value="Kasper Dam" placeholder="Navn på flådeansvarlig"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- AM / KAM BOXES -->
+          <div class="fg fg-2">
+            <div class="card">
+              <div class="card-head"><div class="card-head-title">👤 Account Manager</div></div>
+              <div class="card-body">
+                <div class="am-box">
+                  <div class="am-avatar" style="background:var(--blue)">AJ</div>
+                  <div class="am-info">
+                    <input class="am-in" id="amName" value="Anna Jensen" placeholder="Navn på AM"/>
+                    <input class="am-in am-in-sub" id="amEmail" value="anna.jensen@opendo.dk" placeholder="E-mail"/>
+                    <input class="am-in am-in-sub" id="amPhone" value="+45 51 22 33 44" placeholder="Telefon"/>
+                  </div>
+                </div>
+                <div style="margin-top:10px">
+                  <span class="fl" style="display:block;margin-bottom:4px">Pipeline — dette kontor</span>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <span class="mki-tag t-blue">2 aktive tilbud</span>
+                    <span class="mki-tag t-amber">250.000 kr pipeline</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><div class="card-head-title">⭐ Key Account Manager</div></div>
+              <div class="card-body">
+                <div class="am-box">
+                  <div class="am-avatar" style="background:#7c3aed">SB</div>
+                  <div class="am-info">
+                    <input class="am-in" id="kamName" value="Søren Birk" placeholder="Navn på KAM"/>
+                    <input class="am-in am-in-sub" id="kamEmail" value="soren.birk@opendo.dk" placeholder="E-mail"/>
+                    <input class="am-in am-in-sub" id="kamPhone" value="+45 40 55 77 88" placeholder="Telefon"/>
+                  </div>
+                </div>
+                <div style="margin-top:10px">
+                  <span class="fl" style="display:block;margin-bottom:4px">Portefølje — nøglekunde</span>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <span class="mki-tag t-green">Strategisk konto</span>
+                    <span class="mki-tag t-blue">SOW mål: 25%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">📝 Fri notat</div><button class="btn btn-ghost btn-sm">✏</button></div>
+            <div class="card-body">
+              <div style="font-size:12.5px;color:var(--ink2);line-height:1.7">Nordvest Invest er en mellemstor formueforvalter med fokus på nordiske aktier og obligationer. Beslutninger træffes primært af CFO Mikkel Nordgaard. De er meget prisfølsomme men åbne for langsigtede aftaler. God relation opbygget over 2024.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cust-tab-1" class="cust-content" style="display:none">
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">👥 Kontaktpersoner</div><button class="btn btn-primary btn-sm">+ Tilføj</button></div>
+            <div class="card-body">
+              <div class="cp-item">
+                <div class="cp-av" style="background:var(--blue)">MN</div>
+                <div class="cp-info">
+                  <div class="cp-name">Mikkel Nordgaard</div>
+                  <div class="cp-role">CFO — Primær beslutningstagere</div>
+                  <div class="cp-contact">
+                    <span class="cp-link">📧 mn@nordvestinvest.dk</span>
+                    <span class="cp-link">📞 +45 28 44 77 00</span>
+                  </div>
+                </div>
+                <span class="mki-tag t-blue" style="margin-left:auto">Primær</span>
+              </div>
+              <div class="cp-item">
+                <div class="cp-av" style="background:#7c3aed">LH</div>
+                <div class="cp-info">
+                  <div class="cp-name">Louise Holm</div>
+                  <div class="cp-role">CEO — Godkender større aftaler</div>
+                  <div class="cp-contact">
+                    <span class="cp-link">📧 lh@nordvestinvest.dk</span>
+                    <span class="cp-link">📞 +45 28 44 77 10</span>
+                  </div>
+                </div>
+                <span class="mki-tag t-green" style="margin-left:auto">Beslutningstager</span>
+              </div>
+              <div class="cp-item">
+                <div class="cp-av" style="background:var(--amber)">KD</div>
+                <div class="cp-info">
+                  <div class="cp-name">Kasper Dam</div>
+                  <div class="cp-role">Investerings analytiker — Teknisk kontakt</div>
+                  <div class="cp-contact">
+                    <span class="cp-link">📧 kd@nordvestinvest.dk</span>
+                  </div>
+                </div>
+                <span class="mki-tag t-gray" style="margin-left:auto">Teknisk</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cust-tab-2" class="cust-content" style="display:none">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-head-title">📄 Tilbud & Aftaler</div>
+              <button class="btn btn-primary btn-sm" onclick="openNewDeal()">+ Nyt tilbud</button>
+            </div>
+            <div class="card-body">
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Aktive tilbud</div>
+              <div class="offer-item" onclick="showView('pipeline')">
+                <span class="dc-qchip">⬡ QUO-2026-0047</span>
+                <span class="oi-title">Portefølje upgrade & rådgivning</span>
+                <span class="oi-val">250.000 kr</span>
+                <span class="sp sp-negot oi-stage">Forhandling</span>
+              </div>
+              <div class="offer-item" onclick="showView('pipeline')">
+                <span class="dc-qchip">⬡ QUO-2026-0043</span>
+                <span class="oi-title">ESG rapporteringsværktøj</span>
+                <span class="oi-val">32.000 kr</span>
+                <span class="sp sp-proposal oi-stage">Tilbud sendt</span>
+              </div>
+              <div class="divider" style="margin:10px 0"></div>
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Tidligere ordrer</div>
+              <div class="offer-item">
+                <span class="dc-qchip ord">✓ ORD-2025-0087</span>
+                <span class="oi-title">Årsgennemgang 2025</span>
+                <span class="oi-val">18.000 kr</span>
+                <span class="sp sp-won oi-stage">Vundet</span>
+              </div>
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);margin-top:10px;text-align:right">Alle beløb ekskl. moms</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">⬡ Manuelt tilbud (uden Stacc synk)</div><button class="btn btn-ghost btn-sm" onclick="openNewDeal()">+ Opret</button></div>
+            <div class="card-body">
+              <div style="font-size:12px;color:var(--muted);line-height:1.6">Opret et tilbud manuelt inden Stacc-synk er konfigureret. Tilbuddet kan efterfølgende kobles på Stacc Cloud og synkroniseres automatisk.</div>
+              <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="openNewDeal()">📝 Opret manuelt tilbud</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="cust-tab-3" class="cust-content" style="display:none">
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">🎯 Strategi & noter</div><button class="btn btn-ghost btn-sm">✏</button></div>
+            <div class="card-body">
+              <div class="fg fg-2" style="margin-bottom:12px">
+                <div class="fi"><span class="fl">Kundetype</span><span class="fv">Strategisk nøglekunde</span></div>
+                <div class="fi"><span class="fl">Segment</span><span class="fv">Erhverv — Investering</span></div>
+                <div class="fi"><span class="fl">Potentiale (12 mdr.)</span><span class="fv big" style="font-size:16px">420.000 kr</span></div>
+                <div class="fi"><span class="fl">Nuværende omsætning</span><span class="fv mono">18.000 kr/år</span></div>
+              </div>
+              <div class="divider"></div>
+              <div style="margin-top:10px">
+                <div class="fl" style="margin-bottom:6px">Strategiske mål 2026</div>
+                <div style="font-size:12px;color:var(--ink2);line-height:1.8">
+                  ◉ Lukke portefølje-aftalen Q2 2026 (250k)<br>
+                  ◉ Introducere ESG-produkter til analyseteamet<br>
+                  ◉ Udvide til pension & forsikring i H2 2026<br>
+                  ◉ Etablere kvartalsvise strategimøder med CEO
+                </div>
+              </div>
+              <div class="divider" style="margin-top:12px"></div>
+              <div style="margin-top:10px">
+                <div class="fl" style="margin-bottom:4px">Konkurrentsituation</div>
+                <div style="font-size:12px;color:var(--muted);line-height:1.6">Nordnet og Saxo Bank er kendte konkurrenter på platformssiden. Vi har fordelen på rådgivningsdybde og personlig relation til CFO.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cust-tab-4" class="cust-content" style="display:none">
+          <div class="credit-track">
+            <div class="credit-track-label">
+              B2B Kreditspor
+              <span class="credit-external-badge">⊞ M365 Ekstern kilde</span>
+            </div>
+            <div class="credit-fields">
+              <div class="fi"><span class="fl">Kreditvurdering</span><span class="fv mono" style="color:var(--green);font-weight:500">A (God)</span></div>
+              <div class="fi"><span class="fl">Kreditgrænse</span><span class="fv mono">500.000 kr</span></div>
+              <div class="fi"><span class="fl">Udnyttet kredit</span><span class="fv mono">0 kr</span></div>
+            </div>
+            <div class="credit-note">Kreditdata hentes fra eksternt kreditbureau via M365 integration. Opdateres automatisk månedligt. Vises kun til autoriserede rådgivere. Ikke baseret på PSD2 — erhvervskredit vurderes separat.</div>
+          </div>
+          <div class="card" style="margin-top:0">
+            <div class="card-head"><div class="card-head-title">📊 Kredithistorik (B2B)</div></div>
+            <div class="card-body">
+              <div class="fg fg-3">
+                <div class="fi"><span class="fl">Senest vurderet</span><span class="fv mono">01 apr 2026</span></div>
+                <div class="fi"><span class="fl">Betalingshistorik</span><span class="fv" style="color:var(--green)">✓ Ingen restancer</span></div>
+                <div class="fi"><span class="fl">D&B Rating</span><span class="fv mono">4A1</span></div>
+                <div class="fi"><span class="fl">Årsresultat (2024)</span><span class="fv mono">3.2M kr</span></div>
+                <div class="fi"><span class="fl">Egenkapital</span><span class="fv mono">12.8M kr</span></div>
+                <div class="fi"><span class="fl">Soliditet</span><span class="fv mono">42%</span></div>
+              </div>
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);margin-top:10px">Alle beløb ekskl. moms · Kreditdata er vejledende og må ikke udgøre eneste beslutningsgrundlag</div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:0">
+            <div class="card-head"><div class="card-head-title">🔗 M365 kredit-integration</div><button class="btn btn-ghost btn-sm">Konfigurér</button></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--green)">●</span><span>Dynamics 365 Finance forbundet</span>
+                  <span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted)">Aktiv</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--amber)">●</span><span>Ekstern kreditbureau API (Experian / D&B)</span>
+                  <span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:9px;color:var(--amber)">Konfigurer</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--rule2)">●</span><span>CVR-API automatisk opslag</span>
+                  <span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted)">Snart</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       RAPPORTERING VIEW
+  ═══════════════════════════════ -->
+  <div class="view" id="view-rapport">
+    <div class="rp-layout">
+
+      <!-- FILTER BAR -->
+      <div class="rp-filters">
+        <span class="rp-filter-label">Filtrer:</span>
+
+        <select class="rp-select" id="rf-period" onchange="updateReports()">
+          <option>År til dato (2026)</option>
+          <option>Q2 2026</option>
+          <option>Q1 2026</option>
+          <option>Sidste 12 måneder</option>
+          <option>Brugerdefineret</option>
+        </select>
+
+        <div class="rp-divider"></div>
+
+        <select class="rp-select" id="rf-kam" onchange="updateReports()">
+          <option value="all">Alle KAM'er</option>
+          <option value="sb">Søren Birk (KAM)</option>
+          <option value="pk">Pernille Koch (KAM)</option>
+          <option value="mh">Martin Holm (KAM)</option>
+        </select>
+
+        <select class="rp-select" id="rf-am" onchange="updateReports()">
+          <option value="all">Alle AM'er</option>
+          <option value="aj">Anna Jensen (AM)</option>
+          <option value="jp">Jakob Pedersen (AM)</option>
+          <option value="sr">Sara Ravn (AM)</option>
+        </select>
+
+        <div class="rp-divider"></div>
+
+        <select class="rp-select" id="rf-stage" onchange="updateReports()">
+          <option value="all">Alle stadier</option>
+          <option value="prospect">Prospect</option>
+          <option value="qualified">Kvalificeret</option>
+          <option value="proposal">Tilbud sendt</option>
+          <option value="negot">Forhandling</option>
+          <option value="won">Vundet</option>
+          <option value="lost">Tabt</option>
+        </select>
+
+        <select class="rp-select" id="rf-size" onchange="updateReports()">
+          <option value="all">Alle størrelser</option>
+          <option value="small">Lille flåde (&lt;50)</option>
+          <option value="medium">Mellemstor (50–200)</option>
+          <option value="large">Stor flåde (200+)</option>
+        </select>
+
+        <div class="rp-divider"></div>
+        <button class="btn btn-ghost btn-sm" onclick="updateReports()">↻ Opdater</button>
+        <button class="btn btn-primary btn-sm" onclick="exportReport()">⬇ Eksporter</button>
+      </div>
+
+      <div class="rp-body">
+
+        <!-- KPI ROW -->
+        <div class="kpi-row" id="kpiRow">
+          <div class="kpi-card">
+            <div class="kpi-label">Pipeline (ekskl. moms)</div>
+            <div class="kpi-val" id="kpi-pipeline">1,98M kr</div>
+            <div class="kpi-sub"><span class="kpi-delta kd-up">+12%</span> vs. samme periode 2025</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Vundne aftaler</div>
+            <div class="kpi-val" id="kpi-won">388.000 kr</div>
+            <div class="kpi-sub"><span class="kpi-delta kd-up">+8%</span> win rate: 34%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Antal tilbud</div>
+            <div class="kpi-val" id="kpi-count">14</div>
+            <div class="kpi-sub"><span class="kpi-delta kd-flat">±0</span> aktive tilbud i dag</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Gns. flåde SOW</div>
+            <div class="kpi-val" id="kpi-sow" style="color:var(--blue)">18%</div>
+            <div class="kpi-sub"><span class="kpi-delta kd-up">+4pp</span> mål: 25%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total flåde (kunder)</div>
+            <div class="kpi-val" id="kpi-fleet">4.820</div>
+            <div class="kpi-sub"><span class="kpi-delta kd-up">+320</span> enheder YTD</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Opendo flåde</div>
+            <div class="kpi-val" id="kpi-opendo" style="color:var(--stacc)">867</div>
+            <div class="kpi-sub"><span class="kpi-delta kd-up">+110</span> enheder YTD</div>
+          </div>
+        </div>
+
+        <!-- POWER BI EMBED SECTION -->
+        <div class="rp-embed">
+          <div class="rp-embed-head">
+            <div class="rph-title">
+              <span>⊞</span> Power BI — Pipeline Dashboard
+              <span class="rph-badge">Embedded via M365</span>
+            </div>
+            <div class="rph-actions">
+              <button class="btn btn-ghost btn-sm" onclick="toast('m365','Power BI','Åbner rapport i fuld skærm i M365...')">⤢ Fuld skærm</button>
+              <button class="btn btn-ghost btn-sm" onclick="toast('m365','Rapport delt','Link kopieret til udklipsholder')">↗ Del</button>
+              <button class="btn btn-ghost btn-sm" onclick="configurePBI()">⚙ Konfigurér</button>
+            </div>
+          </div>
+          <div class="rp-frame">
+            <div class="rp-pbi-placeholder">
+              <div class="rp-pbi-icon">📊</div>
+              <div style="font-family:'Fraunces',serif;font-size:16px;font-weight:500;color:var(--ink2)">Power BI Rapport ikke tilsluttet endnu</div>
+              <div class="rp-pbi-txt">Indsæt din Power BI Embedded rapport-URL herunder.<br>Kræver Microsoft Azure Power BI Embedded kapacitet (SKU A1+)<br>og en M365 Power BI Pro licens.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+                <div class="rp-pbi-url" onclick="configurePBI()">⊞ Tilslut Power BI rapport</div>
+                <div class="rp-pbi-url" style="background:var(--stacc-l);color:var(--stacc);border-color:rgba(14,116,144,.2)" onclick="toast('stacc','Stacc rapport','Åbner Stacc Cloud analytics...')">⬡ Åbn Stacc Analytics</div>
+              </div>
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);margin-top:4px">Filtre ovenfor sendes automatisk som URL-parametre til Power BI rapport</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHART ROW -->
+        <div class="chart-grid">
+
+          <!-- Pipeline funnel -->
+          <div class="chart-card">
+            <div class="chart-head">
+              <span>Pipeline funnel — <span id="funnelTitle">alle AM/KAM</span></span>
+              <span style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted)">ekskl. moms</span>
+            </div>
+            <div class="chart-body">
+              <div class="pipeline-funnel" id="pipelineFunnel">
+                <div class="pf-row"><span class="pf-label">Prospect</span><div class="pf-bar-wrap"><div class="pf-bar" style="width:100%;background:#c4bfb6"><span class="pf-bar-lbl" style="color:var(--ink2)">320.000</span></div></div><span class="pf-count">2 aftaler</span></div>
+                <div class="pf-row"><span class="pf-label">Kvalificeret</span><div class="pf-bar-wrap"><div class="pf-bar" style="width:72%;background:var(--blue-m)"><span class="pf-bar-lbl" style="color:var(--blue)">228.000</span></div></div><span class="pf-count">3 aftaler</span></div>
+                <div class="pf-row"><span class="pf-label">Tilbud sendt</span><div class="pf-bar-wrap"><div class="pf-bar" style="width:58%;background:#93c5fd"><span class="pf-bar-lbl" style="color:var(--blue)">184.000</span></div></div><span class="pf-count">4 aftaler</span></div>
+                <div class="pf-row"><span class="pf-label">Forhandling</span><div class="pf-bar-wrap"><div class="pf-bar" style="width:44%;background:var(--amber-m)"><span class="pf-bar-lbl">140.000</span></div></div><span class="pf-count">3 aftaler</span></div>
+                <div class="pf-row"><span class="pf-label">Vundet</span><div class="pf-bar-wrap"><div class="pf-bar" style="width:25%;background:var(--green-m)"><span class="pf-bar-lbl" style="color:var(--green)">80.000</span></div></div><span class="pf-count">2 aftaler</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly won bar chart -->
+          <div class="chart-card">
+            <div class="chart-head">
+              <span>Vundne aftaler pr. måned</span>
+              <span style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted)" id="wonChartSub">2026 · kr ekskl. moms</span>
+            </div>
+            <div class="chart-body">
+              <div class="bar-chart" id="wonBarChart">
+                <div class="bc-col"><div class="bc-val">48k</div><div class="bc-bar" style="height:40%;background:var(--blue-m)"></div><div class="bc-lbl">Jan</div></div>
+                <div class="bc-col"><div class="bc-val">72k</div><div class="bc-bar" style="height:60%;background:var(--blue-m)"></div><div class="bc-lbl">Feb</div></div>
+                <div class="bc-col"><div class="bc-val">120k</div><div class="bc-bar" style="height:100%;background:var(--blue)"></div><div class="bc-lbl">Mar</div></div>
+                <div class="bc-col"><div class="bc-val">85k</div><div class="bc-bar" style="height:71%;background:var(--blue-m)"></div><div class="bc-lbl">Apr</div></div>
+                <div class="bc-col"><div class="bc-val">—</div><div class="bc-bar" style="height:4%;background:var(--rule)"></div><div class="bc-lbl">Maj</div></div>
+                <div class="bc-col"><div class="bc-val">—</div><div class="bc-bar" style="height:4%;background:var(--rule)"></div><div class="bc-lbl">Jun</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SOW tabel -->
+          <div class="chart-card" style="grid-column:1/-1">
+            <div class="chart-head">
+              <span>SOW oversigt — kunder med flåde</span>
+              <span style="font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted)">Opendo flåde / Total flåde = SOW%</span>
+            </div>
+            <div class="chart-body" style="padding:0">
+              <table class="sow-table">
+                <thead>
+                  <tr>
+                    <th>Kunde</th>
+                    <th class="r">Flåde størrelse</th>
+                    <th class="r">Opendo flåde</th>
+                    <th>SOW</th>
+                    <th>KAM</th>
+                    <th>AM</th>
+                    <th class="r">Pipeline (ekskl. moms)</th>
+                  </tr>
+                </thead>
+                <tbody id="sowTableBody">
+                  <tr>
+                    <td style="font-weight:500">Nordvest Invest A/S</td>
+                    <td class="r">100</td>
+                    <td class="r">10</td>
+                    <td><div style="display:flex;align-items:center;gap:6px"><div class="sow-mini-bar" style="width:30px;background:var(--blue)"></div><span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--blue);font-weight:500">10%</span></div></td>
+                    <td style="font-size:11px">Søren Birk</td>
+                    <td style="font-size:11px">Anna Jensen</td>
+                    <td class="r">250.000 kr</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:500">TechFlow Danmark ApS</td>
+                    <td class="r">250</td>
+                    <td class="r">80</td>
+                    <td><div style="display:flex;align-items:center;gap:6px"><div class="sow-mini-bar" style="width:80px;background:var(--green)"></div><span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--green);font-weight:500">32%</span></div></td>
+                    <td style="font-size:11px">Pernille Koch</td>
+                    <td style="font-size:11px">Jakob Pedersen</td>
+                    <td class="r">1.200.000 kr</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:500">HBK Ejendomme A/S</td>
+                    <td class="r">40</td>
+                    <td class="r">40</td>
+                    <td><div style="display:flex;align-items:center;gap:6px"><div class="sow-mini-bar" style="width:100%;max-width:100px;background:var(--green)"></div><span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--green);font-weight:500">100%</span></div></td>
+                    <td style="font-size:11px">Søren Birk</td>
+                    <td style="font-size:11px">Anna Jensen</td>
+                    <td class="r">320.000 kr ✓</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:500">Lars Møller Holding ApS</td>
+                    <td class="r">60</td>
+                    <td class="r">5</td>
+                    <td><div style="display:flex;align-items:center;gap:6px"><div class="sow-mini-bar" style="width:15px;background:var(--amber)"></div><span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--amber);font-weight:500">8%</span></div></td>
+                    <td style="font-size:11px">Martin Holm</td>
+                    <td style="font-size:11px">Sara Ravn</td>
+                    <td class="r">48.000 kr</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:500">Clausen Transport ApS</td>
+                    <td class="r">180</td>
+                    <td class="r">0</td>
+                    <td><div style="display:flex;align-items:center;gap:6px"><div class="sow-mini-bar" style="width:0px;background:var(--red)"></div><span style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted);font-weight:500">0%</span></div></td>
+                    <td style="font-size:11px">Pernille Koch</td>
+                    <td style="font-size:11px">Jakob Pedersen</td>
+                    <td class="r">28.000 kr</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content-area -->
+</div><!-- /shell -->
+
+<!-- ══ STACC MODAL ══ -->
+<div class="ov" id="staccModal">
+  <div class="modal">
+    <div class="mh">
+      <div><div class="mh-title">Stacc Cloud ↔ CRM Synkronisering</div><div class="mh-sub">Tovejs synk · QUO-2026-0047 · Nordvest Invest A/S</div></div>
+      <button class="m-close" onclick="closeModal('staccModal')">✕</button>
+    </div>
+    <div class="mb">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn btn-sm" id="staccDirCRM" onclick="setStaccDir('toCRM')" style="background:var(--stacc);color:white;border:none">⬡ → CRM (modtag)</button>
+        <button class="btn btn-ghost btn-sm" id="staccDirBoth" onclick="setStaccDir('both')">⇄ Begge veje</button>
+        <button class="btn btn-ghost btn-sm" id="staccDirPush" onclick="setStaccDir('toStacc')">CRM → ⬡ (send)</button>
+      </div>
+      <div class="flow-steps" id="staccFlowSteps">
+        <div class="fs-step cur" id="sf1"><div class="fs-num">1</div><div class="fs-txt"><div class="fs-lbl">Forbinder til Stacc Xchange API</div><div class="fs-hint">Validerer API-nøgle og tilbudsnummer QUO-2026-0047</div></div><span class="fs-chk">✓</span></div>
+        <div class="fs-step" id="sf2"><div class="fs-num">2</div><div class="fs-txt"><div class="fs-lbl">Henter tilbudsdata fra Stacc Cloud</div><div class="fs-hint">GET /xchange/quotes/QUO-2026-0047 — beløb, linjer, status</div></div><span class="fs-chk">✓</span></div>
+        <div class="fs-step" id="sf3"><div class="fs-num">3</div><div class="fs-txt"><div class="fs-lbl">Sammenligner og opdaterer CRM</div><div class="fs-hint">Merger Stacc-data med CRM-aftalen — konflikter markeres</div></div><span class="fs-chk">✓</span></div>
+        <div class="fs-step" id="sf4"><div class="fs-num">4</div><div class="fs-txt"><div class="fs-lbl">Sender CRM-ændringer til Stacc</div><div class="fs-hint">POST /xchange/quotes/QUO-2026-0047/sync</div></div><span class="fs-chk">✓</span></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeModal('staccModal')">Annuller</button>
+      <button class="btn btn-primary" id="staccRunBtn" onclick="runStaccSync()" style="background:var(--stacc)"><span id="staccBtnTxt">⬡ Start synk</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ M365 MODAL ══ -->
+<div class="ov" id="m365Modal">
+  <div class="modal">
+    <div class="mh">
+      <div><div class="mh-title">Konvertér tilbud → salgsordre</div><div class="mh-sub">Push til Dynamics 365 Business Central via M365 Graph API</div></div>
+      <button class="m-close" onclick="closeModal('m365Modal')">✕</button>
+    </div>
+    <div class="mb">
+      <div style="background:var(--bg);border:1px solid var(--rule);border-radius:7px;padding:10px 14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <div><span style="color:var(--muted);font-size:10px;font-family:'Geist Mono',monospace">Tilbud</span><div style="font-family:'Geist Mono',monospace;font-weight:500">QUO-2026-0047</div></div>
+        <div><span style="color:var(--muted);font-size:10px;font-family:'Geist Mono',monospace">Ny ordre</span><div style="font-family:'Geist Mono',monospace;font-weight:500;color:var(--green)">ORD-2026-0052</div></div>
+        <div><span style="color:var(--muted);font-size:10px;font-family:'Geist Mono',monospace">Beløb (ekskl. moms)</span><div style="font-weight:600">250.000 kr</div></div>
+        <div><span style="color:var(--muted);font-size:10px;font-family:'Geist Mono',monospace">Kunde</span><div>Nordvest Invest A/S</div></div>
+      </div>
+      <div class="flow-steps" id="m365FlowSteps">
+        <div class="fs-step cur" id="mf1"><div class="fs-num">1</div><div class="fs-txt"><div class="fs-lbl">Markerer aftale som vundet</div><div class="fs-hint">Stage → won · lukningsdato sættes til i dag</div></div><span class="fs-chk">✓</span></div>
+        <div class="fs-step" id="mf2"><div class="fs-num">2</div><div class="fs-txt"><div class="fs-lbl">Konverterer QUO → ORD nummer</div><div class="fs-hint">QUO-2026-0047 → ORD-2026-0052 · sekventiel nummerering</div></div><span class="fs-chk">✓</span></div>
+        <div class="fs-step" id="mf3"><div class="fs-num">3</div><div class="fs-txt"><div class="fs-lbl">Opretter salgsordre i Dynamics 365</div><div class="fs-hint">POST /api/v2.0/companies/{id}/salesOrders · alle linjer inkl.</div></div><span class="fs-chk">✓</span></div>
+        <div class="fs-step" id="mf4"><div class="fs-num">4</div><div class="fs-txt"><div class="fs-lbl">Notificerer Stacc — produkt aktiveret</div><div class="fs-hint">POST /xchange/products/activate · lukker tilbudsstatus</div></div><span class="fs-chk">✓</span></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeModal('m365Modal')">Annuller</button>
+      <button class="btn btn-primary" id="m365RunBtn" onclick="runM365()" style="background:var(--m365)"><span id="m365BtnTxt">⊞ Opret ordre i M365</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NEW DEAL MODAL ══ -->
+<div class="ov" id="newDealModal">
+  <div class="modal">
+    <div class="mh">
+      <div>
+        <div class="mh-title">Nyt tilbud / aftale</div>
+        <div class="mh-sub">Opret manuelt — Stacc synk kan tilkobles efterfølgende</div>
+      </div>
+      <button class="m-close" onclick="closeModal('newDealModal')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="manual-badge">✏ Manuel oprettelse · Stacc synk konfigureres separat</div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label class="form-lbl">Tilbudstitel</label>
+          <input class="form-in" placeholder="Beskrivelse af aftale..." id="nd-title"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Kunde (CVR / navn)</label>
+          <input class="form-in" placeholder="Søg kunde..." id="nd-cust" value="Nordvest Invest A/S"/>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label class="form-lbl">Tilbudsbeløb (ekskl. moms)</label>
+          <input class="form-in" placeholder="0 kr" type="number" id="nd-val"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Tilbudsnummer</label>
+          <input class="form-in" value="QUO-2026-0053" id="nd-num" style="font-family:'Geist Mono',monospace;font-weight:500"/>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label class="form-lbl">Pipeline stadie</label>
+          <select class="form-in form-select" id="nd-stage">
+            <option>Prospect</option>
+            <option>Kvalificeret</option>
+            <option selected>Tilbud sendt</option>
+            <option>Forhandling</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Forventet lukning</label>
+          <input class="form-in" type="date" id="nd-close" value="2026-09-30"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Kobl Stacc synk (valgfrit)</label>
+        <select class="form-in form-select" id="nd-stacc">
+          <option value="none">Ingen Stacc synk endnu (tilkobles senere)</option>
+          <option value="existing">Link til eksisterende Stacc tilbud</option>
+          <option value="new">Opret nyt tilbud i Stacc Cloud</option>
+        </select>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeModal('newDealModal')">Annuller</button>
+      <button class="btn btn-primary" onclick="createDeal()">💾 Gem tilbud</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastEl">
+  <div class="t-ico" id="toastIco">✓</div>
+  <div class="t-txt"><div class="t-title" id="toastTitle">—</div><div class="t-sub" id="toastSub">—</div></div>
+</div>
+
+<script>
+/* ── VIEW SWITCHING ── */
+let staccDir = 'toCRM';
+let qCounter = 52;
+
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('visible'));
+  document.querySelectorAll('.vt').forEach(el => el.classList.remove('active'));
+  const vEl = document.getElementById('view-'+v);
+  const vtEl = document.getElementById('vt-'+v);
+  if(vEl) vEl.classList.add('visible');
+  if(vtEl) vtEl.classList.add('active');
+}
+
+function switchMain(v) {
+  // Update topbar active state
+  document.querySelectorAll('.tn').forEach(el => el.classList.remove('active'));
+  const tnEl = document.getElementById('tn-'+v);
+  if(tnEl) tnEl.classList.add('active');
+
+  if(v === 'kunder') showView('kunder');
+  else if(v === 'pipeline') showView('pipeline');
+  else if(v === 'rapport') showView('rapport');
+  else toast('ok','Navigerer','Åbner '+v+'...');
+}
+
+/* ── SOW CALCULATION ── */
+function calcSOW() {
+  const total = parseFloat(document.getElementById('fleetTotal').value) || 0;
+  const opendo = parseFloat(document.getElementById('fleetOpendo').value) || 0;
+  let sow = 0;
+  if(total > 0) sow = Math.min(100, (opendo / total) * 100);
+  const sowPct = sow.toFixed(1).replace('.0','') + '%';
+  document.getElementById('sowPct').textContent = sowPct;
+  document.getElementById('sowBar').style.width = sow + '%';
+  // Color gradient: red→amber→green
+  const color = sow < 10 ? 'var(--red)' : sow < 25 ? 'var(--amber)' : 'var(--green)';
+  document.getElementById('sowBar').style.background = color;
+  document.getElementById('sowPct').style.color = color;
+}
+
+/* ── REPORTING FUNCTIONS ── */
+function updateReports() {
+  const kam = document.getElementById('rf-kam').value;
+  const am  = document.getElementById('rf-am').value;
+  // Update funnel title
+  let title = 'alle AM/KAM';
+  if(kam !== 'all') title = document.getElementById('rf-kam').options[document.getElementById('rf-kam').selectedIndex].text;
+  else if(am !== 'all') title = document.getElementById('rf-am').options[document.getElementById('rf-am').selectedIndex].text;
+  const ft = document.getElementById('funnelTitle');
+  if(ft) ft.textContent = title;
+  toast('ok','Rapport opdateret','Filtre anvendt — Power BI ville modtage parametre');
+}
+
+function exportReport() {
+  toast('ok','Eksporterer rapport','Genererer Excel-fil med aktuelle filtre...');
+}
+
+function configurePBI() {
+  toast('m365','Power BI konfiguration','Åbner M365 Power BI Embedded opsætning — kræver Azure kapacitet SKU A1+');
+}
+
+/* ── CUSTOMER TABS ── */
+function selCustTab(i, el) {
+  for(let t=0;t<5;t++) {
+    const tb = document.getElementById('cust-tab-'+t);
+    if(tb) tb.style.display = (t===i)?'flex':'none';
+  }
+  document.querySelectorAll('.ct').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ── DEAL SELECTION ── */
+function selDeal(i) {
+  document.querySelectorAll('.deal-card').forEach((c,idx) => c.classList.toggle('sel', idx===i));
+}
+
+function selCustomer(i) {
+  document.querySelectorAll('.mk-item').forEach((c,idx) => c.classList.toggle('active', idx===i));
+}
+
+/* ── QUOTE NUMBER ── */
+function onQChange(v) {
+  document.getElementById('qbhNum').textContent = 'QUO-'+v;
+  setStaccStatus('pend');
+}
+
+function autoNum() {
+  qCounter++;
+  const n = new Date().getFullYear()+'-'+String(qCounter).padStart(4,'0');
+  document.getElementById('quoteInput').value = n;
+  document.getElementById('qbhNum').textContent = 'QUO-'+n;
+  setStaccStatus('pend');
+  toast('stacc','Nyt tilbudsnummer','QUO-'+n+' genereret — klar til Stacc synk');
+}
+
+/* ── STACC DIRECTION ── */
+function setStaccDir(d) {
+  staccDir = d;
+  const btns = ['staccDirCRM','staccDirBoth','staccDirPush'];
+  const dirs = ['toCRM','both','toStacc'];
+  btns.forEach((b,i) => {
+    const el = document.getElementById(b);
+    if(dirs[i]===d) { el.style.background=document.getElementById('sf1').closest('.modal').querySelector('[onclick*="toCRM"]')===el?'var(--stacc)':'var(--ink)'; el.style.color='white'; el.style.border='none'; el.className='btn btn-sm'; }
+    else { el.className='btn btn-ghost btn-sm'; el.style.background=''; el.style.color=''; el.style.border=''; }
+  });
+  document.getElementById('staccDirCRM').style.cssText = d==='toCRM'?'background:var(--stacc);color:white;border:none':'';
+  document.getElementById('staccDirBoth').style.cssText = d==='both'?'background:var(--ink);color:white;border:none':'';
+  document.getElementById('staccDirPush').style.cssText = d==='toStacc'?'background:var(--ink);color:white;border:none':'';
+}
+
+/* ── STACC SYNC STATUS ── */
+function setStaccStatus(state) {
+  const badge = document.getElementById('staccStatusBadge');
+  const sub = document.getElementById('staccSubTxt');
+  if(state==='ok') {
+    badge.className='sync-status ss-ok';
+    badge.innerHTML='<div class="pulse pg"></div>Synkroniseret';
+    sub.textContent='Sidst synk: '+new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})+' i dag · Stacc → CRM aktiv';
+  } else if(state==='pend') {
+    badge.className='sync-status ss-pend';
+    badge.innerHTML='<div class="pulse pa"></div>Afventer synk';
+    sub.textContent='Lokale ændringer ikke sendt til Stacc endnu';
+  } else if(state==='syncing') {
+    badge.className='sync-status ss-pend';
+    badge.innerHTML='<div class="spinner"></div>Synkroniserer...';
+    sub.textContent='Kommunikerer med Stacc Xchange API...';
+  }
+}
+
+/* ── MODALS ── */
+function openStacc() { resetFlow('sf',4); document.getElementById('staccModal').classList.add('open'); }
+function openM365()  { resetFlow('mf',4); document.getElementById('m365Modal').classList.add('open'); }
+function openNewDeal() { document.getElementById('newDealModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); }));
+document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.ov').forEach(m => m.classList.remove('open')); });
+
+/* ── FLOW ANIMATIONS ── */
+function resetFlow(prefix, n) {
+  for(let i=1;i<=n;i++) {
+    const s=document.getElementById(prefix+i);
+    if(s) { s.className='fs-step'; }
+  }
+  const f=document.getElementById(prefix+'1');
+  if(f) f.className='fs-step cur';
+}
+
+function animateFlow(prefix, n, cb) {
+  let step=1;
+  function next() {
+    if(step>n) { setTimeout(cb,300); return; }
+    const cur=document.getElementById(prefix+step);
+    if(cur) cur.className='fs-step cur';
+    setTimeout(()=>{
+      if(cur) cur.className='fs-step done';
+      step++;
+      const nxt=document.getElementById(prefix+step);
+      if(nxt) setTimeout(next,150);
+      else setTimeout(next,350);
+    }, 550+Math.random()*350);
+  }
+  next();
+}
+
+/* ── RUN STACC SYNC ── */
+function runStaccSync() {
+  const btn=document.getElementById('staccRunBtn');
+  const txt=document.getElementById('staccBtnTxt');
+  btn.disabled=true;
+  txt.innerHTML='<div class="spinner" style="display:inline-block;vertical-align:middle;margin-right:5px"></div>Synkroniserer...';
+  setStaccStatus('syncing');
+  animateFlow('sf',4,()=>{
+    closeModal('staccModal');
+    setStaccStatus('ok');
+    btn.disabled=false;
+    txt.textContent='⬡ Start synk';
+    const msg = staccDir==='toCRM' ? 'Stacc → CRM: Tilbud opdateret' : staccDir==='toStacc' ? 'CRM → Stacc: Ændringer sendt' : 'Tovejs synk gennemført';
+    toast('stacc', msg, 'QUO-2026-0047 er i sync med Stacc Cloud');
+    addActivity('afd-stacc','⬡',msg+' — QUO-2026-0047 synkroniseret','Netop nu');
+  });
+}
+
+/* ── RUN M365 CONVERSION ── */
+function runM365() {
+  const btn=document.getElementById('m365RunBtn');
+  const txt=document.getElementById('m365BtnTxt');
+  btn.disabled=true;
+  txt.innerHTML='<div class="spinner" style="display:inline-block;vertical-align:middle;margin-right:5px"></div>Opretter ordre...';
+  document.getElementById('m365StatusBadge').className='sync-status ss-pend';
+  document.getElementById('m365StatusBadge').innerHTML='<div class="spinner"></div>Opretter...';
+  animateFlow('mf',4,()=>{
+    closeModal('m365Modal');
+    btn.disabled=false;
+    txt.textContent='⊞ Opret ordre i M365';
+    // Update M365 badge
+    const m365b=document.getElementById('m365StatusBadge');
+    m365b.className='sync-status ss-ok';
+    m365b.innerHTML='<div class="pulse pg"></div>Ordre oprettet';
+    document.getElementById('m365SubTxt').textContent='ORD-2026-0052 aktiv i Dynamics 365 · Afsluttet '+new Date().toLocaleDateString('da-DK');
+    // Update stepper
+    document.querySelectorAll('#mainStepper .s-dot').forEach(d => d.className='s-dot won');
+    document.querySelectorAll('#mainStepper .s-lbl').forEach(l => l.className='s-lbl won');
+    document.querySelectorAll('#mainStepper .s-line').forEach(l => l.classList.add('done'));
+    // Update quote number header
+    document.getElementById('qbhNum').textContent='ORD-2026-0052';
+    // Update active deal card chip
+    const chip=document.querySelector('.deal-card.sel .dc-qchip');
+    if(chip){chip.textContent='✓ ORD-2026-0052';chip.className='dc-qchip ord';}
+    const sp=document.querySelector('.deal-card.sel .sp');
+    if(sp){sp.className='sp sp-won';sp.textContent='✓ Vundet';}
+    const bar=document.querySelector('.deal-card.sel .dc-bar');
+    if(bar){bar.style.width='100%';bar.style.background='var(--green)';}
+    toast('m365','Ordre oprettet i M365','ORD-2026-0052 er aktiv i Dynamics 365 Business Central');
+    addActivity('afd-m365','⊞','✓ Aftale vundet — ORD-2026-0052 oprettet i Dynamics 365','Netop nu');
+    addActivity('afd-stacc','⬡','Stacc notificeret — produkt aktiveret på Nordvest Invest A/S','Netop nu');
+  });
+}
+
+/* ── CREATE MANUAL DEAL ── */
+function createDeal() {
+  const title=document.getElementById('nd-title').value||'Nyt tilbud';
+  const num=document.getElementById('nd-num').value;
+  const val=document.getElementById('nd-val').value;
+  const stage=document.getElementById('nd-stage').value;
+  const staccOpt=document.getElementById('nd-stacc').value;
+  closeModal('newDealModal');
+  const label = staccOpt==='none' ? 'Manuelt tilbud oprettet' : staccOpt==='existing' ? 'Tilbud oprettet & Stacc linket' : 'Tilbud oprettet & Stacc notificeret';
+  toast('ok', label, num+' · '+(val?val+' kr':'beløb ikke angivet'));
+}
+
+/* ── ACTIVITY HELPER ── */
+function addActivity(cls,icon,text,time) {
+  const feed=document.getElementById('actFeed');
+  if(!feed) return;
+  const item=document.createElement('div');
+  item.className='af-item';
+  item.style.animation='fadeIn .4s ease';
+  item.innerHTML=`<div class="af-dot ${cls}">${icon}</div><div class="af-text"><div class="af-main">${text}</div><div class="af-time">${time}</div></div>`;
+  feed.insertBefore(item,feed.firstChild);
+}
+
+/* ── STACC INCOMING (topbar badge) ── */
+function handleStaccIncoming() {
+  document.getElementById('staccIncoming').style.display='none';
+  openStacc();
+  // Pre-set to receive direction
+  staccDir='toCRM';
+  toast('stacc','Nyt tilbud fra Stacc','QUO-2026-0054 modtaget — åbner synk dialog');
+}
+
+/* ── TOAST ── */
+let tTimer=null;
+function toast(type,title,sub) {
+  const el=document.getElementById('toastEl');
+  const ico=document.getElementById('toastIco');
+  const tit=document.getElementById('toastTitle');
+  const sb=document.getElementById('toastSub');
+  const icls={'stacc':'ti-stacc','m365':'ti-m365','ok':'ti-ok'};
+  const iico={'stacc':'⬡','m365':'⊞','ok':'✓'};
+  ico.className='t-ico '+(icls[type]||'ti-ok');
+  ico.textContent=iico[type]||'✓';
+  tit.textContent=title;
+  sb.textContent=sub;
+  el.classList.add('show');
+  if(tTimer) clearTimeout(tTimer);
+  tTimer=setTimeout(()=>el.classList.remove('show'),4000);
+}
+
+/* ── FADE ANIMATION ── */
+const fadeStyle=document.createElement('style');
+fadeStyle.textContent='@keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}';
+document.head.appendChild(fadeStyle);
+</script>
+</body>
+</html>
