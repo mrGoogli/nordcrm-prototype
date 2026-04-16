@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM API Design — Danish Finance</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@300;400;500;600&family=Lato:wght@300;400;700&display=swap');
+
+:root {
+  --bg:       #f4f1eb;
+  --ink:      #1c1917;
+  --surface:  #fffefb;
+  --surface2: #ede9df;
+  --rule:     #d4cfc4;
+  --muted:    #7c7669;
+
+  --get:      #0d7a4e;
+  --get-bg:   #e6f4ee;
+  --post:     #1a56a0;
+  --post-bg:  #e8f0fb;
+  --put:      #8a5200;
+  --put-bg:   #fdf3e0;
+  --patch:    #6b2fa0;
+  --patch-bg: #f3ecfc;
+  --delete:   #b91c1c;
+  --delete-bg:#fde8e8;
+
+  --gdpr:     #c0392b;
+  --dora:     #1a6b9a;
+  --fin:      #b35a00;
+  --auth:     #2d6a4f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* ── SIDEBAR + LAYOUT ── */
+.shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--ink);
+  color: #c8c4bc;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: #3a3730; border-radius: 2px; }
+
+.sb-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid #2e2c28;
+}
+
+.sb-logo-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: #f4f1eb;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.sb-logo-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #5a5750;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.sb-version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #0d7a4e;
+  background: rgba(13,122,78,0.15);
+  padding: 2px 7px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.sb-section {
+  padding: 16px 0 8px;
+  border-bottom: 1px solid #2e2c28;
+}
+
+.sb-section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #5a5750;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0 20px 8px;
+}
+
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 12px;
+  color: #9c9890;
+  text-decoration: none;
+}
+
+.sb-link:hover { background: rgba(255,255,255,0.04); color: #f4f1eb; }
+.sb-link.active { background: rgba(255,255,255,0.07); color: #f4f1eb; }
+
+.sb-method {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: 600;
+  flex-shrink: 0;
+  min-width: 38px;
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+.m-get    { background: rgba(13,122,78,0.25);  color: #4ade80; }
+.m-post   { background: rgba(26,86,160,0.25);  color: #93c5fd; }
+.m-put    { background: rgba(138,82,0,0.25);   color: #fbbf24; }
+.m-patch  { background: rgba(107,47,160,0.25); color: #c4b5fd; }
+.m-delete { background: rgba(185,28,28,0.25);  color: #fca5a5; }
+
+/* ── MAIN CONTENT ── */
+.main {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 2px solid var(--ink);
+  padding: 20px 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.topbar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.topbar-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.base-url {
+  background: var(--ink);
+  color: #4ade80;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+/* ── CONTENT SECTIONS ── */
+.content {
+  padding: 40px;
+}
+
+.api-section {
+  display: none;
+}
+.api-section.visible { display: block; }
+
+.section-head {
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.section-head h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+/* ── ENDPOINT CARD ── */
+.endpoint {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.endpoint:hover { box-shadow: 0 4px 20px rgba(28,25,23,0.08); }
+
+.ep-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+  user-select: none;
+}
+
+.ep-header.open { border-bottom-color: var(--rule); }
+
+.ep-method {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.method-GET    { background: var(--get-bg);    color: var(--get);    border: 1px solid rgba(13,122,78,0.3); }
+.method-POST   { background: var(--post-bg);   color: var(--post);   border: 1px solid rgba(26,86,160,0.3); }
+.method-PUT    { background: var(--put-bg);    color: var(--put);    border: 1px solid rgba(138,82,0,0.3); }
+.method-PATCH  { background: var(--patch-bg);  color: var(--patch);  border: 1px solid rgba(107,47,160,0.3); }
+.method-DELETE { background: var(--delete-bg); color: var(--delete); border: 1px solid rgba(185,28,28,0.3); }
+
+.ep-path {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.ep-path .param { color: var(--post); }
+
+.ep-summary {
+  font-size: 12px;
+  color: var(--muted);
+  flex: 1;
+}
+
+.ep-tags {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ep-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.tag-gdpr   { color: var(--gdpr);   border-color: rgba(192,57,43,0.4);  background: rgba(192,57,43,0.06); }
+.tag-dora   { color: var(--dora);   border-color: rgba(26,107,154,0.4); background: rgba(26,107,154,0.06); }
+.tag-auth   { color: var(--auth);   border-color: rgba(45,106,79,0.4);  background: rgba(45,106,79,0.06); }
+.tag-fin    { color: var(--fin);    border-color: rgba(179,90,0,0.4);   background: rgba(179,90,0,0.06); }
+.tag-stacc  { color: #0e7490;       border-color: rgba(14,116,144,0.4); background: rgba(14,116,144,0.06); }
+.tag-m365   { color: #1d4ed8;       border-color: rgba(29,78,216,0.4);  background: rgba(29,78,216,0.06); }
+.tag-audit  { color: #065f46;       border-color: rgba(6,95,70,0.4);    background: rgba(6,95,70,0.06); }
+
+.ep-chevron {
+  color: var(--muted);
+  transition: transform 0.2s;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.ep-chevron.open { transform: rotate(90deg); }
+
+/* ── ENDPOINT BODY ── */
+.ep-body {
+  display: none;
+  padding: 20px;
+  background: #faf9f6;
+}
+
+.ep-body.open { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+@media (max-width: 900px) {
+  .ep-body.open { grid-template-columns: 1fr; }
+}
+
+.ep-col-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ── CODE BLOCKS ── */
+.code-block {
+  background: #1c1917;
+  border-radius: 4px;
+  padding: 14px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-x: auto;
+  color: #d4cfc4;
+}
+
+.code-block .key    { color: #93c5fd; }
+.code-block .str    { color: #86efac; }
+.code-block .num    { color: #fcd34d; }
+.code-block .bool   { color: #f9a8d4; }
+.code-block .null   { color: #a78bfa; }
+.code-block .comment{ color: #5a5750; font-style: italic; }
+.code-block .url    { color: #67e8f9; }
+.code-block .verb   { color: #fbbf24; }
+.code-block .header-key { color: #c4b5fd; }
+.code-block .header-val { color: #86efac; }
+
+/* ── PARAMS TABLE ── */
+.params-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-bottom: 14px;
+}
+
+.params-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+
+.params-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(212,207,196,0.4);
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.params-table tr:last-child td { border-bottom: none; }
+
+.p-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #1a56a0; }
+.p-type { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+.p-req  { font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 1px 4px; background: var(--delete-bg); color: var(--delete); border-radius: 2px; }
+.p-opt  { font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 1px 4px; background: var(--surface2); color: var(--muted); border-radius: 2px; }
+
+/* ── COMPLIANCE NOTES ── */
+.comp-note {
+  border-left: 3px solid;
+  padding: 8px 12px;
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.6;
+  border-radius: 0 3px 3px 0;
+}
+
+.comp-note.gdpr  { border-color: var(--gdpr);  background: rgba(192,57,43,0.05);  color: #7f1d1d; }
+.comp-note.dora  { border-color: var(--dora);  background: rgba(26,107,154,0.05); color: #1e3a5f; }
+.comp-note.fin   { border-color: var(--fin);   background: rgba(179,90,0,0.05);   color: #7c2d12; }
+
+.comp-note strong { display: block; margin-bottom: 2px; font-weight: 700; }
+
+/* ── OVERVIEW BOXES ── */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.ov-box {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 20px;
+}
+
+.ov-box-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ov-list {
+  list-style: none;
+  font-size: 12px;
+}
+
+.ov-list li {
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--rule);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ov-list li:last-child { border-bottom: none; }
+.ov-list li strong { color: var(--ink); font-weight: 600; }
+
+/* ── RESPONSE CODES ── */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.status-item {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px;
+  font-size: 11px;
+}
+
+.status-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.s-2xx { color: var(--get); }
+.s-3xx { color: var(--post); }
+.s-4xx { color: var(--fin); }
+.s-5xx { color: var(--delete); }
+
+.status-name { font-weight: 600; margin-bottom: 2px; }
+.status-desc { color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+/* ── HEADERS TABLE ── */
+.headers-block {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.hb-title {
+  padding: 10px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--rule);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hb-row {
+  display: grid;
+  grid-template-columns: 220px 1fr 80px;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(212,207,196,0.4);
+  font-size: 11px;
+  align-items: start;
+  transition: background 0.1s;
+}
+
+.hb-row:last-child { border-bottom: none; }
+.hb-row:hover { background: rgba(0,0,0,0.02); }
+
+.hb-name { font-family: 'JetBrains Mono', monospace; color: #6b2fa0; font-size: 11px; }
+.hb-val  { color: var(--muted); line-height: 1.5; }
+.hb-req  { font-family: 'JetBrains Mono', monospace; font-size: 9px; text-align: right; }
+
+/* ── ERROR SCHEMA ── */
+.error-box {
+  background: #fef9f9;
+  border: 1px solid rgba(185,28,28,0.2);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.error-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--delete);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ── RATE LIMIT ── */
+.rl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.rl-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 14px;
+  text-align: left;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--rule);
+}
+
+.rl-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(212,207,196,0.4);
+  vertical-align: top;
+}
+
+.rl-table tr:last-child td { border-bottom: none; }
+
+.rl-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #1a56a0; }
+.rl-table td:nth-child(2) { font-weight: 600; }
+.rl-table td:nth-child(3) { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--get); }
+.rl-table td:last-child { color: var(--muted); font-size: 11px; }
+
+@media (max-width: 768px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; }
+  .content { padding: 20px; }
+  .hb-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════════════════════════
+     SIDEBAR
+══════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-title">CRM<br>API</div>
+    <div class="sb-logo-sub">Danish Finance · REST v1</div>
+    <div class="sb-version">v1.0.0</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Overview</div>
+    <a class="sb-link active" onclick="show('overview')">📋 Overview & Auth</a>
+    <a class="sb-link" onclick="show('headers')">📨 Headers & Errors</a>
+    <a class="sb-link" onclick="show('ratelimits')">⏱ Rate Limits</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Core</div>
+    <a class="sb-link" onclick="show('contacts')"><span class="sb-method m-get">GET</span> Contacts</a>
+    <a class="sb-link" onclick="show('contacts')"><span class="sb-method m-post">POST</span> Contacts</a>
+    <a class="sb-link" onclick="show('accounts')"><span class="sb-method m-get">GET</span> Accounts</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Sales</div>
+    <a class="sb-link" onclick="show('deals')"><span class="sb-method m-get">GET</span> Deals</a>
+    <a class="sb-link" onclick="show('deals')"><span class="sb-method m-post">POST</span> Deals</a>
+    <a class="sb-link" onclick="show('activities')"><span class="sb-method m-post">POST</span> Activities</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Support</div>
+    <a class="sb-link" onclick="show('tickets')"><span class="sb-method m-get">GET</span> Tickets</a>
+    <a class="sb-link" onclick="show('tickets')"><span class="sb-method m-post">POST</span> Tickets</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Marketing</div>
+    <a class="sb-link" onclick="show('campaigns')"><span class="sb-method m-get">GET</span> Campaigns</a>
+    <a class="sb-link" onclick="show('campaigns')"><span class="sb-method m-post">POST</span> Campaigns</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">GDPR</div>
+    <a class="sb-link" onclick="show('gdpr')"><span class="sb-method m-post">POST</span> Consent</a>
+    <a class="sb-link" onclick="show('gdpr')"><span class="sb-method m-post">POST</span> Rights Request</a>
+    <a class="sb-link" onclick="show('gdpr')"><span class="sb-method m-delete">DEL</span> Erasure</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Integrations</div>
+    <a class="sb-link" onclick="show('stacc')"><span class="sb-method m-get">GET</span> Stacc Data</a>
+    <a class="sb-link" onclick="show('m365')"><span class="sb-method m-post">POST</span> M365 Sync</a>
+    <a class="sb-link" onclick="show('webhooks')">🔔 Webhooks</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Compliance</div>
+    <a class="sb-link" onclick="show('audit')"><span class="sb-method m-get">GET</span> Audit Log</a>
+    <a class="sb-link" onclick="show('dora')">🛡 DORA Incidents</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════
+     MAIN
+══════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">API Reference</div>
+      <div class="base-url">https://api.crm.yourdomain.dk/v1</div>
+    </div>
+    <div class="topbar-meta">
+      REST · JSON · OAuth 2.0 / MSAL<br>
+      Azure API Management · EU North Region
+    </div>
+  </div>
+
+  <div class="content">
+
+<!-- ══ OVERVIEW ══ -->
+<div id="sec-overview" class="api-section visible">
+  <div class="section-head">
+    <h2>Overview & Authentication</h2>
+    <p class="section-desc">All API requests must be authenticated via Microsoft Entra ID (Azure AD). The API uses OAuth 2.0 Bearer tokens issued by MSAL. Every request is scoped to a tenant, identified by the X-Tenant-Id header.</p>
+  </div>
+
+  <div class="overview-grid">
+    <div class="ov-box">
+      <div class="ov-box-title">🔐 Authentication Flow</div>
+      <ul class="ov-list">
+        <li><strong>Protocol:</strong> OAuth 2.0 + PKCE (web/mobile)</li>
+        <li><strong>Client Credentials:</strong> For server-to-server (M365, Stacc)</li>
+        <li><strong>Token issuer:</strong> Azure Entra ID (MSAL)</li>
+        <li><strong>Token lifetime:</strong> 1 hour access / 24h refresh</li>
+        <li><strong>MFA:</strong> Enforced via Conditional Access</li>
+        <li><strong>Scopes:</strong> crm.read, crm.write, crm.gdpr, crm.admin</li>
+      </ul>
+    </div>
+    <div class="ov-box">
+      <div class="ov-box-title">🌐 API Design Principles</div>
+      <ul class="ov-list">
+        <li><strong>Style:</strong> RESTful, resource-oriented</li>
+        <li><strong>Format:</strong> JSON (application/json)</li>
+        <li><strong>Versioning:</strong> URL path (/v1/)</li>
+        <li><strong>Pagination:</strong> Cursor-based (continuationToken)</li>
+        <li><strong>Dates:</strong> ISO 8601 UTC always</li>
+        <li><strong>IDs:</strong> UUID v4 strings</li>
+        <li><strong>Money:</strong> Integer øre (1/100 DKK)</li>
+      </ul>
+    </div>
+    <div class="ov-box">
+      <div class="ov-box-title">🏛️ GDPR API Obligations</div>
+      <ul class="ov-list">
+        <li><strong>Every write:</strong> Emits audit_log entry</li>
+        <li><strong>PII reads:</strong> Log sensitiveAccess=true</li>
+        <li><strong>Erasure:</strong> Cascades across all containers</li>
+        <li><strong>Consent gate:</strong> Checked before any marketing write</li>
+        <li><strong>Retention:</strong> TTL enforced via Cosmos DB policy</li>
+        <li><strong>Data export:</strong> Machine-readable JSON (Art. 20)</li>
+      </ul>
+    </div>
+    <div class="ov-box">
+      <div class="ov-box-title">🛡 DORA Obligations</div>
+      <ul class="ov-list">
+        <li><strong>Incident endpoint:</strong> POST /v1/incidents/dora</li>
+        <li><strong>All 5xx errors:</strong> Trigger Azure Monitor alert</li>
+        <li><strong>Circuit breaker:</strong> On Stacc + M365 integrations</li>
+        <li><strong>Timeout:</strong> 30s hard limit on all requests</li>
+        <li><strong>Health check:</strong> GET /v1/health (no auth required)</li>
+        <li><strong>Audit log:</strong> Immutable, min 1yr retention</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-head" style="margin-top:32px">
+    <h2 style="font-size:20px">Authentication Examples</h2>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div>
+      <div class="ep-col-title">User Login (PKCE Flow)</div>
+      <div class="code-block"><span class="comment">// 1. Redirect user to Entra ID</span>
+<span class="verb">GET</span> <span class="url">https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize</span>
+  ?client_id=<span class="str">{clientId}</span>
+  &response_type=<span class="str">code</span>
+  &redirect_uri=<span class="str">https://crm.yourdomain.dk/auth/callback</span>
+  &scope=<span class="str">api://{clientId}/crm.read openid profile</span>
+  &code_challenge=<span class="str">{pkceChallenge}</span>
+  &code_challenge_method=<span class="str">S256</span>
+
+<span class="comment">// 2. Exchange code for token</span>
+<span class="verb">POST</span> <span class="url">https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token</span>
+{
+  <span class="key">"grant_type"</span>: <span class="str">"authorization_code"</span>,
+  <span class="key">"code"</span>: <span class="str">"{authCode}"</span>,
+  <span class="key">"code_verifier"</span>: <span class="str">"{pkceVerifier}"</span>,
+  <span class="key">"client_id"</span>: <span class="str">"{clientId}"</span>
+}</div>
+    </div>
+    <div>
+      <div class="ep-col-title">API Request with Token</div>
+      <div class="code-block"><span class="verb">GET</span> <span class="url">/v1/contacts?limit=20</span> <span class="str">HTTP/1.1</span>
+<span class="header-key">Host:</span> <span class="header-val">api.crm.yourdomain.dk</span>
+<span class="header-key">Authorization:</span> <span class="header-val">Bearer eyJ0eXAiOiJKV1QiLCJhb...</span>
+<span class="header-key">X-Tenant-Id:</span> <span class="header-val">t_01j8x4k2p9n3m7q6r5s</span>
+<span class="header-key">X-Correlation-Id:</span> <span class="header-val">req_01jb3x9k2p4n8m1q7</span>
+<span class="header-key">Accept:</span> <span class="header-val">application/json</span>
+<span class="header-key">Accept-Language:</span> <span class="header-val">da-DK</span>
+
+<span class="comment">// Response headers include:</span>
+<span class="header-key">X-Request-Id:</span> <span class="header-val">req_01jb3x9k2p4n8m1q7</span>
+<span class="header-key">X-Audit-Log-Id:</span> <span class="header-val">aud_01jb3x9k2p5n9m2r8</span>
+<span class="header-key">X-RateLimit-Remaining:</span> <span class="header-val">487</span>
+<span class="header-key">X-Data-Region:</span> <span class="header-val">EU_NORTH</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HEADERS & ERRORS ══ -->
+<div id="sec-headers" class="api-section">
+  <div class="section-head">
+    <h2>Headers & Error Handling</h2>
+    <p class="section-desc">Standard request and response headers. All errors follow RFC 7807 (Problem Details for HTTP APIs). GDPR-specific headers track data processing context per request.</p>
+  </div>
+
+  <div class="headers-block">
+    <div class="hb-title">Request Headers</div>
+    <div class="hb-row"><span class="hb-name">Authorization</span><span class="hb-val">Bearer {JWT} — Entra ID access token. Validated on every request.</span><span class="hb-req p-req">required</span></div>
+    <div class="hb-row"><span class="hb-name">X-Tenant-Id</span><span class="hb-val">Tenant UUID. Must match claims in token. Requests rejected if mismatch.</span><span class="hb-req p-req">required</span></div>
+    <div class="hb-row"><span class="hb-name">X-Correlation-Id</span><span class="hb-val">Client-generated request ID (UUID). Echoed in response + written to audit log.</span><span class="hb-req p-req">required</span></div>
+    <div class="hb-row"><span class="hb-name">Content-Type</span><span class="hb-val">application/json — required for all POST/PUT/PATCH requests</span><span class="hb-req p-req">write</span></div>
+    <div class="hb-row"><span class="hb-name">X-Gdpr-Purpose</span><span class="hb-val">Processing purpose for this call (e.g. crm_sales, customer_support, marketing). Written to audit log.</span><span class="hb-req p-opt">optional</span></div>
+    <div class="hb-row"><span class="hb-name">X-On-Behalf-Of</span><span class="hb-val">User UUID when an admin performs action on behalf of another user. Audit logged separately.</span><span class="hb-req p-opt">optional</span></div>
+    <div class="hb-row"><span class="hb-name">Accept-Language</span><span class="hb-val">Locale for error messages and date formatting. Default: da-DK</span><span class="hb-req p-opt">optional</span></div>
+    <div class="hb-row"><span class="hb-name">Idempotency-Key</span><span class="hb-val">UUID for POST requests. Server deduplicates within 24h. Required for financial operations.</span><span class="hb-req p-opt">POST</span></div>
+  </div>
+
+  <div class="headers-block">
+    <div class="hb-title">Response Headers</div>
+    <div class="hb-row"><span class="hb-name">X-Request-Id</span><span class="hb-val">Server-generated request ID. Use for support/debugging.</span><span class="hb-req"></span></div>
+    <div class="hb-row"><span class="hb-name">X-Audit-Log-Id</span><span class="hb-val">ID of the audit_log entry created for this request (GDPR + DORA traceability)</span><span class="hb-req"></span></div>
+    <div class="hb-row"><span class="hb-name">X-Data-Region</span><span class="hb-val">EU_NORTH or EU_WEST — confirms data residency of the response payload</span><span class="hb-req"></span></div>
+    <div class="hb-row"><span class="hb-name">X-RateLimit-Limit</span><span class="hb-val">Total requests allowed in current window</span><span class="hb-req"></span></div>
+    <div class="hb-row"><span class="hb-name">X-RateLimit-Remaining</span><span class="hb-val">Requests remaining in current window</span><span class="hb-req"></span></div>
+    <div class="hb-row"><span class="hb-name">X-RateLimit-Reset</span><span class="hb-val">Unix timestamp when rate limit window resets</span><span class="hb-req"></span></div>
+    <div class="hb-row"><span class="hb-name">Retry-After</span><span class="hb-val">Seconds to wait before retry (on 429 and 503)</span><span class="hb-req"></span></div>
+  </div>
+
+  <div class="ep-col-title" style="margin-bottom:12px">Standard Error Response (RFC 7807)</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div class="code-block"><span class="comment">// HTTP 422 — Validation Error</span>
+{
+  <span class="key">"type"</span>: <span class="str">"https://api.crm.yourdomain.dk/errors/validation"</span>,
+  <span class="key">"title"</span>: <span class="str">"Validation Failed"</span>,
+  <span class="key">"status"</span>: <span class="num">422</span>,
+  <span class="key">"detail"</span>: <span class="str">"One or more fields failed validation"</span>,
+  <span class="key">"instance"</span>: <span class="str">"/v1/contacts"</span>,
+  <span class="key">"requestId"</span>: <span class="str">"req_01jb3x9k2p4n8m1q7"</span>,
+  <span class="key">"timestamp"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>,
+  <span class="key">"errors"</span>: [
+    {
+      <span class="key">"field"</span>: <span class="str">"email"</span>,
+      <span class="key">"code"</span>: <span class="str">"INVALID_FORMAT"</span>,
+      <span class="key">"message"</span>: <span class="str">"Must be a valid email address"</span>
+    }
+  ]
+}</div>
+    <div class="code-block"><span class="comment">// HTTP 403 — GDPR Consent Missing</span>
+{
+  <span class="key">"type"</span>: <span class="str">"https://api.crm.yourdomain.dk/errors/gdpr-consent"</span>,
+  <span class="key">"title"</span>: <span class="str">"GDPR Consent Required"</span>,
+  <span class="key">"status"</span>: <span class="num">403</span>,
+  <span class="key">"detail"</span>: <span class="str">"Contact has not provided marketing_email consent"</span>,
+  <span class="key">"instance"</span>: <span class="str">"/v1/campaigns/send"</span>,
+  <span class="key">"gdprContext"</span>: {
+    <span class="key">"requiredConsent"</span>: <span class="str">"marketing_email"</span>,
+    <span class="key">"contactId"</span>: <span class="str">"c_01j8x4k2p9n3m7q6r5"</span>,
+    <span class="key">"suppressedSince"</span>: <span class="str">"2026-01-10T14:22:00Z"</span>
+  },
+  <span class="key">"requestId"</span>: <span class="str">"req_01jb3x9k2p5n9m2r8"</span>
+}</div>
+  </div>
+
+  <div class="ep-col-title" style="margin-bottom:12px">HTTP Status Codes</div>
+  <div class="status-grid">
+    <div class="status-item"><div class="status-code s-2xx">200</div><div class="status-name">OK</div><div class="status-desc">Successful GET, PATCH, PUT</div></div>
+    <div class="status-item"><div class="status-code s-2xx">201</div><div class="status-name">Created</div><div class="status-desc">Resource created (POST). Location header included.</div></div>
+    <div class="status-item"><div class="status-code s-2xx">202</div><div class="status-name">Accepted</div><div class="status-desc">Async job queued (e.g. erasure, bulk import)</div></div>
+    <div class="status-item"><div class="status-code s-2xx">204</div><div class="status-name">No Content</div><div class="status-desc">Successful DELETE with no response body</div></div>
+    <div class="status-item"><div class="status-code s-4xx">400</div><div class="status-name">Bad Request</div><div class="status-desc">Malformed JSON or missing required fields</div></div>
+    <div class="status-item"><div class="status-code s-4xx">401</div><div class="status-name">Unauthorized</div><div class="status-desc">Missing or expired bearer token</div></div>
+    <div class="status-item"><div class="status-code s-4xx">403</div><div class="status-name">Forbidden</div><div class="status-desc">Insufficient scope, GDPR consent missing, or tenant mismatch</div></div>
+    <div class="status-item"><div class="status-code s-4xx">404</div><div class="status-name">Not Found</div><div class="status-desc">Resource does not exist in this tenant</div></div>
+    <div class="status-item"><div class="status-code s-4xx">409</div><div class="status-name">Conflict</div><div class="status-desc">Duplicate idempotency key or state conflict</div></div>
+    <div class="status-item"><div class="status-code s-4xx">422</div><div class="status-name">Unprocessable</div><div class="status-desc">Validation failed (RFC 7807 error body)</div></div>
+    <div class="status-item"><div class="status-code s-4xx">429</div><div class="status-name">Too Many Requests</div><div class="status-desc">Rate limit exceeded. Retry-After header set.</div></div>
+    <div class="status-item"><div class="status-code s-5xx">500</div><div class="status-name">Server Error</div><div class="status-desc">Triggers DORA alert to Azure Monitor + incident log</div></div>
+    <div class="status-item"><div class="status-code s-5xx">503</div><div class="status-name">Unavailable</div><div class="status-desc">Planned maintenance or failover. Retry-After set.</div></div>
+  </div>
+</div>
+
+<!-- ══ RATE LIMITS ══ -->
+<div id="sec-ratelimits" class="api-section">
+  <div class="section-head">
+    <h2>Rate Limits & Throttling</h2>
+    <p class="section-desc">Rate limits are enforced at Azure API Management per tenant, per endpoint category. Financial and GDPR endpoints have stricter limits to prevent bulk data extraction (GDPR minimisation + DORA data security).</p>
+  </div>
+  <table class="rl-table">
+    <tr><th>Endpoint Category</th><th>Limit</th><th>Window</th><th>Notes</th></tr>
+    <tr><td>Standard reads (GET)</td><td>500 req</td><td>per minute</td><td>Per tenant. Burst up to 50 req/sec.</td></tr>
+    <tr><td>Standard writes (POST/PUT/PATCH)</td><td>200 req</td><td>per minute</td><td>Idempotency keys deduplicate within 24h.</td></tr>
+    <tr><td>DELETE operations</td><td>50 req</td><td>per minute</td><td>Soft-delete preferred. Hard delete requires admin scope.</td></tr>
+    <tr><td>Bulk endpoints (/bulk/*)</td><td>10 req</td><td>per minute</td><td>Max 500 records per bulk request.</td></tr>
+    <tr><td>Stacc financial data</td><td>30 req</td><td>per minute</td><td>PSD2 consent checked each call. Strict limit — financial data.</td></tr>
+    <tr><td>GDPR rights requests</td><td>20 req</td><td>per hour</td><td>Anti-abuse. Art. 12(5) allows refusal of excessive requests.</td></tr>
+    <tr><td>Audit log reads</td><td>60 req</td><td>per minute</td><td>DPO/admin scope only. DORA audit access.</td></tr>
+    <tr><td>M365 sync trigger</td><td>60 req</td><td>per hour</td><td>Graph API underlying limit applies.</td></tr>
+    <tr><td>Webhook delivery (inbound)</td><td>1000 req</td><td>per minute</td><td>Stacc + M365 webhooks. HMAC-SHA256 verified.</td></tr>
+    <tr><td>Health check (/health)</td><td>unlimited</td><td>—</td><td>No auth required. DORA uptime monitoring.</td></tr>
+  </table>
+
+  <div class="comp-note dora">
+    <strong>⚡ DORA Requirement</strong>
+    All 429 rate limit hits are logged in Azure Monitor. A sustained rate of 429s from a single tenant triggers an automated ICT incident assessment per DORA Art. 17 — potential signs of a security incident or data extraction attempt.
+  </div>
+</div>
+
+<!-- ══ CONTACTS ══ -->
+<div id="sec-contacts" class="api-section">
+  <div class="section-head">
+    <h2>Contacts</h2>
+    <p class="section-desc">Core CRM entity. All contact endpoints write to the audit_log. PII fields are only returned for users with crm.read scope. The GDPR object is always returned alongside contact data — it cannot be stripped.</p>
+  </div>
+
+  <!-- GET /contacts -->
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-GET">GET</span>
+      <span class="ep-path">/v1/contacts</span>
+      <span class="ep-summary">List contacts with filtering and pagination</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR</span><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Query Parameters</div>
+        <table class="params-table">
+          <tr><th>Param</th><th>Type</th><th>Req?</th><th>Description</th></tr>
+          <tr><td class="p-name">limit</td><td class="p-type">integer</td><td><span class="p-opt">opt</span></td><td>Max records returned. Default 20, max 100.</td></tr>
+          <tr><td class="p-name">continuationToken</td><td class="p-type">string</td><td><span class="p-opt">opt</span></td><td>Cursor for next page (from previous response)</td></tr>
+          <tr><td class="p-name">type</td><td class="p-type">enum</td><td><span class="p-opt">opt</span></td><td>customer | prospect | lead | partner</td></tr>
+          <tr><td class="p-name">ownerId</td><td class="p-type">uuid</td><td><span class="p-opt">opt</span></td><td>Filter by assigned relationship manager</td></tr>
+          <tr><td class="p-name">search</td><td class="p-type">string</td><td><span class="p-opt">opt</span></td><td>Full-text search via Azure AI Search (name, email)</td></tr>
+          <tr><td class="p-name">updatedAfter</td><td class="p-type">datetime</td><td><span class="p-opt">opt</span></td><td>ISO 8601. For incremental sync.</td></tr>
+          <tr><td class="p-name">includeGdpr</td><td class="p-type">boolean</td><td><span class="p-opt">opt</span></td><td>Include full GDPR sub-object. Default true. Cannot be false for crm.gdpr scope holders.</td></tr>
+          <tr><td class="p-name">includeStacc</td><td class="p-type">boolean</td><td><span class="p-opt">opt</span></td><td>Include Stacc financial snapshot. Requires crm.financial scope + valid PSD2 consent.</td></tr>
+        </table>
+        <div class="comp-note gdpr"><strong>📋 GDPR — Art. 5 Data Minimisation</strong>Do not request includeStacc=true unless the processing purpose requires financial data. Every Stacc field access is audit logged with sensitiveAccess=true.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200</div>
+        <div class="code-block">{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"c_01j8x4k2p9n3m7q6r5"</span>,
+      <span class="key">"type"</span>: <span class="str">"customer"</span>,
+      <span class="key">"firstName"</span>: <span class="str">"Lars"</span>,
+      <span class="key">"lastName"</span>: <span class="str">"Jensen"</span>,
+      <span class="key">"email"</span>: <span class="str">"lars.jensen@example.dk"</span>,
+      <span class="key">"phone"</span>: <span class="str">"+4520123456"</span>,
+      <span class="key">"accountId"</span>: <span class="str">"a_01j9k2p4n8m1q7r5s3"</span>,
+      <span class="key">"ownerId"</span>: <span class="str">"u_01j8x4k2p9n3m7q6r5"</span>,
+      <span class="key">"gdpr"</span>: {
+        <span class="key">"lawfulBasis"</span>: <span class="str">"contract"</span>,
+        <span class="key">"marketingSuppressed"</span>: <span class="bool">false</span>,
+        <span class="key">"profilingOptOut"</span>: <span class="bool">false</span>,
+        <span class="key">"retentionExpiresAt"</span>: <span class="str">"2031-04-15T00:00:00Z"</span>,
+        <span class="key">"consents"</span>: [
+          {
+            <span class="key">"type"</span>: <span class="str">"marketing_email"</span>,
+            <span class="key">"givenAt"</span>: <span class="str">"2026-01-10T10:00:00Z"</span>,
+            <span class="key">"version"</span>: <span class="str">"v2.1"</span>
+          }
+        ]
+      },
+      <span class="key">"createdAt"</span>: <span class="str">"2026-01-10T10:00:00Z"</span>,
+      <span class="key">"updatedAt"</span>: <span class="str">"2026-04-01T14:30:00Z"</span>
+    }
+  ],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"count"</span>: <span class="num">1</span>,
+    <span class="key">"total"</span>: <span class="num">2847</span>,
+    <span class="key">"continuationToken"</span>: <span class="str">"eyJjb250aW51..."</span>,
+    <span class="key">"hasMore"</span>: <span class="bool">true</span>
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST /contacts -->
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/contacts</span>
+      <span class="ep-summary">Create a new contact with GDPR lawful basis</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR</span><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block">{
+  <span class="key">"type"</span>: <span class="str">"customer"</span>,            <span class="comment">// required</span>
+  <span class="key">"firstName"</span>: <span class="str">"Lars"</span>,         <span class="comment">// required</span>
+  <span class="key">"lastName"</span>: <span class="str">"Jensen"</span>,          <span class="comment">// required</span>
+  <span class="key">"email"</span>: <span class="str">"lars@example.dk"</span>,   <span class="comment">// optional</span>
+  <span class="key">"phone"</span>: <span class="str">"+4520123456"</span>,       <span class="comment">// optional</span>
+  <span class="key">"accountId"</span>: <span class="str">"a_01j9k..."</span>,    <span class="comment">// optional</span>
+  <span class="key">"ownerId"</span>: <span class="str">"u_01j8x..."</span>,      <span class="comment">// required</span>
+  <span class="key">"source"</span>: <span class="str">"web"</span>,              <span class="comment">// optional</span>
+  <span class="key">"gdpr"</span>: {
+    <span class="key">"lawfulBasis"</span>: <span class="str">"contract"</span>, <span class="comment">// REQUIRED</span>
+    <span class="key">"processingPurposes"</span>: [      <span class="comment">// REQUIRED</span>
+      <span class="str">"crm_sales"</span>,
+      <span class="str">"customer_support"</span>
+    ],
+    <span class="key">"dataSource"</span>: <span class="str">"web_form"</span>, <span class="comment">// REQUIRED</span>
+    <span class="key">"dataCategories"</span>: [           <span class="comment">// REQUIRED</span>
+      <span class="str">"basic_contact"</span>
+    ],
+    <span class="key">"consents"</span>: [                 <span class="comment">// if lawfulBasis=consent</span>
+      {
+        <span class="key">"type"</span>: <span class="str">"marketing_email"</span>,
+        <span class="key">"givenAt"</span>: <span class="str">"2026-04-15T09:00:00Z"</span>,
+        <span class="key">"channel"</span>: <span class="str">"web_form"</span>,
+        <span class="key">"version"</span>: <span class="str">"v2.1"</span>
+      }
+    ]
+  }
+}</div>
+        <div class="comp-note gdpr"><strong>🔴 GDPR — Mandatory Fields</strong>gdpr.lawfulBasis, gdpr.processingPurposes, and gdpr.dataSource are required. A contact cannot be created without a documented legal basis. API returns 422 if missing.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 201</div>
+        <div class="code-block">{
+  <span class="key">"id"</span>: <span class="str">"c_01jb3x9k2p4n8m1q7r5"</span>,
+  <span class="key">"type"</span>: <span class="str">"customer"</span>,
+  <span class="key">"firstName"</span>: <span class="str">"Lars"</span>,
+  <span class="key">"lastName"</span>: <span class="str">"Jensen"</span>,
+  <span class="key">"email"</span>: <span class="str">"lars@example.dk"</span>,
+  <span class="key">"gdpr"</span>: {
+    <span class="key">"lawfulBasis"</span>: <span class="str">"contract"</span>,
+    <span class="key">"retentionExpiresAt"</span>: <span class="str">"2031-04-15T00:00:00Z"</span>,
+    <span class="key">"marketingSuppressed"</span>: <span class="bool">false</span>,
+    <span class="key">"profilingOptOut"</span>: <span class="bool">false</span>
+  },
+  <span class="key">"createdAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>
+}
+
+<span class="comment">// Response headers:</span>
+<span class="header-key">Location:</span> <span class="header-val">/v1/contacts/c_01jb3x9k2p4n8m1q7r5</span>
+<span class="header-key">X-Audit-Log-Id:</span> <span class="header-val">aud_01jb3x9k2p5n9m3r8</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /contacts/:id -->
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-GET">GET</span>
+      <span class="ep-path">/v1/contacts/<span class="param">{contactId}</span></span>
+      <span class="ep-summary">Get a single contact by ID</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR</span><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Query Parameters</div>
+        <table class="params-table">
+          <tr><th>Param</th><th>Type</th><th>Req?</th><th>Description</th></tr>
+          <tr><td class="p-name">includeStacc</td><td class="p-type">boolean</td><td><span class="p-opt">opt</span></td><td>Include Stacc financial snapshot. Requires crm.financial scope + valid PSD2 consent. Logged as sensitiveAccess.</td></tr>
+          <tr><td class="p-name">includeM365</td><td class="p-type">boolean</td><td><span class="p-opt">opt</span></td><td>Include M365 profile metadata (last email, meetings).</td></tr>
+          <tr><td class="p-name">includeLeadScore</td><td class="p-type">boolean</td><td><span class="p-opt">opt</span></td><td>Include latest AI lead score. If profilingOptOut=true, returns null with reason.</td></tr>
+        </table>
+        <div class="comp-note gdpr"><strong>📋 GDPR Art. 15 — Subject Access</strong>When a data subject requests their own data (rights_request type=access), use this endpoint. The response must include all stored personal data across all modules. Use GET /v1/contacts/{id}/export for full Art. 20 portability export.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200 (with Stacc)</div>
+        <div class="code-block">{
+  <span class="key">"id"</span>: <span class="str">"c_01j8x4k2p9n3m7q6r5"</span>,
+  <span class="key">"firstName"</span>: <span class="str">"Lars"</span>,
+  <span class="key">"lastName"</span>: <span class="str">"Jensen"</span>,
+  <span class="key">"email"</span>: <span class="str">"lars.jensen@example.dk"</span>,
+  <span class="key">"gdpr"</span>: { <span class="comment">/* full gdpr object */</span> },
+  <span class="key">"staccSnapshot"</span>: {
+    <span class="key">"creditBand"</span>: <span class="str">"good"</span>,
+    <span class="key">"kycStatus"</span>: <span class="str">"verified"</span>,
+    <span class="key">"amlStatus"</span>: <span class="str">"clear"</span>,
+    <span class="key">"consentExpiresAt"</span>: <span class="str">"2026-10-15T00:00:00Z"</span>,
+    <span class="comment">// creditScore, financials: omitted unless crm.financial scope</span>
+    <span class="key">"_accessLevel"</span>: <span class="str">"summary"</span>
+  },
+  <span class="key">"m365Profile"</span>: {
+    <span class="key">"lastEmailAt"</span>: <span class="str">"2026-04-10T11:30:00Z"</span>,
+    <span class="key">"emailCount30d"</span>: <span class="num">7</span>,
+    <span class="key">"lastMeetingAt"</span>: <span class="str">"2026-04-08T09:00:00Z"</span>
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE /contacts/:id -->
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-DELETE">DELETE</span>
+      <span class="ep-path">/v1/contacts/<span class="param">{contactId}</span></span>
+      <span class="ep-summary">Anonymise contact — GDPR Right to Erasure (Art. 17)</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR Art.17</span><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block">{
+  <span class="key">"reason"</span>: <span class="str">"subject_request"</span>,
+  <span class="comment">// subject_request | retention_expired | objection | other</span>
+  <span class="key">"rightsRequestId"</span>: <span class="str">"rr_01jb3x9k2p4n8m1q7"</span>,
+  <span class="comment">// Required if reason=subject_request</span>
+  <span class="key">"retainAuditTombstone"</span>: <span class="bool">true</span>
+  <span class="comment">// Always true — tombstone preserved for DORA audit trail</span>
+}</div>
+        <div class="comp-note gdpr"><strong>🔴 GDPR Art. 17 — Right to Erasure</strong>This is a hard anonymisation, not a delete. PII fields are overwritten. The document ID and audit tombstone are retained. Erasure cascades to: activities.body, ticket_messages.body, lead_scores (deleted), staccSnapshot (cleared). 202 Accepted — async job. Check status via GET /v1/contacts/{id}/erasure-status.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 202 Accepted</div>
+        <div class="code-block">{
+  <span class="key">"jobId"</span>: <span class="str">"job_01jb3x9k2p4n8m1q7r5"</span>,
+  <span class="key">"status"</span>: <span class="str">"queued"</span>,
+  <span class="key">"contactId"</span>: <span class="str">"c_01j8x4k2p9n3m7q6r5"</span>,
+  <span class="key">"estimatedCompletionAt"</span>: <span class="str">"2026-04-15T09:36:00Z"</span>,
+  <span class="key">"scope"</span>: [
+    <span class="str">"contacts"</span>,
+    <span class="str">"activities"</span>,
+    <span class="str">"ticket_messages"</span>,
+    <span class="str">"lead_scores"</span>,
+    <span class="str">"staccSnapshot"</span>,
+    <span class="str">"azure_blob_files"</span>,
+    <span class="str">"search_index"</span>
+  ],
+  <span class="key">"auditLogId"</span>: <span class="str">"aud_01jb3x9k2p5n9m3r8"</span>
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DEALS ══ -->
+<div id="sec-deals" class="api-section">
+  <div class="section-head">
+    <h2>Deals & Pipeline</h2>
+    <p class="section-desc">Sales pipeline management. Monetary values in øre (integer). AI probability scores are stored but marked for GDPR disclosure. Pipeline stage changes emit Service Bus events consumed by automation workflows.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-GET">GET</span>
+      <span class="ep-path">/v1/deals</span>
+      <span class="ep-summary">List deals with pipeline filtering</span>
+      <div class="ep-tags"><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Query Parameters</div>
+        <table class="params-table">
+          <tr><th>Param</th><th>Type</th><th>Req?</th><th>Description</th></tr>
+          <tr><td class="p-name">stage</td><td class="p-type">enum</td><td><span class="p-opt">opt</span></td><td>prospect | qualified | proposal | negotiation | won | lost</td></tr>
+          <tr><td class="p-name">ownerId</td><td class="p-type">uuid</td><td><span class="p-opt">opt</span></td><td>Filter by sales rep. Defaults to calling user if not admin.</td></tr>
+          <tr><td class="p-name">pipelineId</td><td class="p-type">uuid</td><td><span class="p-opt">opt</span></td><td>Filter by pipeline configuration</td></tr>
+          <tr><td class="p-name">closedAfter</td><td class="p-type">date</td><td><span class="p-opt">opt</span></td><td>ISO 8601 date. Filter won/lost deals for reporting.</td></tr>
+          <tr><td class="p-name">minValueOere</td><td class="p-type">integer</td><td><span class="p-opt">opt</span></td><td>Minimum deal value filter (in øre)</td></tr>
+          <tr><td class="p-name">limit</td><td class="p-type">integer</td><td><span class="p-opt">opt</span></td><td>Default 50, max 200.</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200</div>
+        <div class="code-block">{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"d_01j8x4k2p9n3m7q6r5"</span>,
+      <span class="key">"title"</span>: <span class="str">"Investment Portfolio Upgrade"</span>,
+      <span class="key">"stage"</span>: <span class="str">"proposal"</span>,
+      <span class="key">"valueOere"</span>: <span class="num">25000000</span>,    <span class="comment">// 250,000 DKK</span>
+      <span class="key">"currency"</span>: <span class="str">"DKK"</span>,
+      <span class="key">"probability"</span>: <span class="num">65</span>,
+      <span class="key">"aiProbability"</span>: <span class="num">0.71</span>,     <span class="comment">// GDPR: disclosed</span>
+      <span class="key">"contactId"</span>: <span class="str">"c_01j8x4k..."</span>,
+      <span class="key">"ownerId"</span>: <span class="str">"u_01j8x4k..."</span>,
+      <span class="key">"expectedCloseDate"</span>: <span class="str">"2026-06-30"</span>,
+      <span class="key">"createdAt"</span>: <span class="str">"2026-02-01T10:00:00Z"</span>
+    }
+  ],
+  <span class="key">"summary"</span>: {
+    <span class="key">"totalValueOere"</span>: <span class="num">87500000</span>,
+    <span class="key">"weightedValueOere"</span>: <span class="num">56875000</span>,
+    <span class="key">"dealCount"</span>: <span class="num">4</span>
+  },
+  <span class="key">"pagination"</span>: { <span class="key">"count"</span>: <span class="num">4</span>, <span class="key">"hasMore"</span>: <span class="bool">false</span> }
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-PATCH">PATCH</span>
+      <span class="ep-path">/v1/deals/<span class="param">{dealId}</span>/stage</span>
+      <span class="ep-summary">Advance or update deal stage — triggers automation</span>
+      <div class="ep-tags"><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block">{
+  <span class="key">"stage"</span>: <span class="str">"negotiation"</span>,      <span class="comment">// required</span>
+  <span class="key">"note"</span>: <span class="str">"Client requested revised terms"</span>,
+  <span class="key">"probability"</span>: <span class="num">80</span>          <span class="comment">// optional override</span>
+}</div>
+        <div class="comp-note fin"><strong>⚡ Azure Service Bus Event</strong>Stage changes publish to topic: crm.deals.stage_changed. Subscribed by: Logic Apps automation, Power BI streaming dataset, Teams notification bot.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200</div>
+        <div class="code-block">{
+  <span class="key">"id"</span>: <span class="str">"d_01j8x4k2p9n3m7q6r5"</span>,
+  <span class="key">"stage"</span>: <span class="str">"negotiation"</span>,
+  <span class="key">"previousStage"</span>: <span class="str">"proposal"</span>,
+  <span class="key">"stageChangedAt"</span>: <span class="str">"2026-04-15T09:45:00Z"</span>,
+  <span class="key">"automationTriggered"</span>: <span class="bool">true</span>,
+  <span class="key">"eventId"</span>: <span class="str">"evt_01jb3x9k2p5n9m2r8"</span>
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TICKETS ══ -->
+<div id="sec-tickets" class="api-section">
+  <div class="section-head">
+    <h2>Support Tickets</h2>
+    <p class="section-desc">Ticket management with SLA tracking. Financial complaints (isComplaint=true) may trigger Finanstilsynet reporting obligations under Danish financial law. All ticket content is field-encrypted.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/tickets</span>
+      <span class="ep-summary">Create a new support ticket</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR</span><span class="ep-tag tag-fin">Finanstilsynet</span><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block">{
+  <span class="key">"contactId"</span>: <span class="str">"c_01j8x4k..."</span>,     <span class="comment">// required</span>
+  <span class="key">"subject"</span>: <span class="str">"Query about my investment account"</span>,
+  <span class="key">"category"</span>: <span class="str">"account_query"</span>,
+  <span class="key">"priority"</span>: <span class="str">"medium"</span>,
+  <span class="key">"channel"</span>: <span class="str">"email"</span>,
+  <span class="key">"isComplaint"</span>: <span class="bool">false</span>,
+  <span class="key">"initialMessage"</span>: {
+    <span class="key">"body"</span>: <span class="str">"I have a question regarding..."</span>
+    <span class="comment">// Stored encrypted. Not echoed in response.</span>
+  },
+  <span class="key">"slaPolicy"</span>: <span class="str">"standard"</span>         <span class="comment">// standard | premium | regulatory</span>
+}</div>
+        <div class="comp-note fin"><strong>🏛 Finanstilsynet — Financial Complaints</strong>If isComplaint=true is set, a separate complaint record is created with its own retention rules (minimum 5 years under Danish financial law). Finanstilsynet may require complaint statistics reporting. A webhook fires to the compliance team.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 201</div>
+        <div class="code-block">{
+  <span class="key">"id"</span>: <span class="str">"t_01jb3x9k2p4n8m1q7r5"</span>,
+  <span class="key">"ticketNumber"</span>: <span class="str">"TKT-2026-01847"</span>,
+  <span class="key">"status"</span>: <span class="str">"new"</span>,
+  <span class="key">"priority"</span>: <span class="str">"medium"</span>,
+  <span class="key">"isComplaint"</span>: <span class="bool">false</span>,
+  <span class="key">"sla"</span>: {
+    <span class="key">"policyId"</span>: <span class="str">"sla_standard"</span>,
+    <span class="key">"firstResponseDue"</span>: <span class="str">"2026-04-15T17:31:00Z"</span>,
+    <span class="key">"resolutionDue"</span>: <span class="str">"2026-04-17T09:31:00Z"</span>,
+    <span class="key">"breached"</span>: <span class="bool">false</span>
+  },
+  <span class="key">"createdAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CAMPAIGNS ══ -->
+<div id="sec-campaigns" class="api-section">
+  <div class="section-head">
+    <h2>Marketing Campaigns</h2>
+    <p class="section-desc">Campaign management with hard GDPR consent gates. The send endpoint validates consent for every recipient before dispatch — it cannot be bypassed. Suppressions are enforced at the database level, not just the application layer.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/campaigns/<span class="param">{campaignId}</span>/send</span>
+      <span class="ep-summary">Trigger campaign send — enforces GDPR consent gate</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR consent gate</span><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Consent Gate Logic</div>
+        <div class="code-block"><span class="comment">// Server-side enforcement (cannot be bypassed by client)</span>
+
+FOR EACH recipient IN campaign.segment:
+  IF contact.gdpr.marketingSuppressed == <span class="bool">true</span>:
+    → SKIP (log: suppressed)
+  IF contact.gdpr.doNotContact == <span class="bool">true</span>:
+    → SKIP (log: dnc)
+  IF contact.gdpr.consents
+    .filter(c => c.type == campaign.consentType)
+    .filter(c => c.withdrawnAt == <span class="null">null</span>)
+    .length == <span class="num">0</span>:
+    → SKIP (log: no_consent)
+  IF contact.gdpr.isAnonymised == <span class="bool">true</span>:
+    → SKIP (log: anonymised)
+  ELSE:
+    → SEND ✓ (log: sent)</div>
+        <div class="comp-note gdpr"><strong>🔴 GDPR — Opt-in Mandatory</strong>Danish financial sector: legitimate interest is NOT a valid basis for direct marketing. Explicit prior consent required for all campaigns. API returns 403 gdpr-consent error if campaign has zero eligible recipients.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 202 Accepted</div>
+        <div class="code-block">{
+  <span class="key">"jobId"</span>: <span class="str">"job_01jb3x9k2p4n8m1q7"</span>,
+  <span class="key">"campaignId"</span>: <span class="str">"cam_01j8x4k2p9n3..."</span>,
+  <span class="key">"status"</span>: <span class="str">"processing"</span>,
+  <span class="key">"eligibleCount"</span>: <span class="num">1847</span>,
+  <span class="key">"suppressedCount"</span>: <span class="num">203</span>,
+  <span class="key">"suppressionBreakdown"</span>: {
+    <span class="key">"noConsent"</span>: <span class="num">148</span>,
+    <span class="key">"marketingSuppressed"</span>: <span class="num">41</span>,
+    <span class="key">"doNotContact"</span>: <span class="num">9</span>,
+    <span class="key">"anonymised"</span>: <span class="num">5</span>
+  },
+  <span class="key">"estimatedSendAt"</span>: <span class="str">"2026-04-15T10:00:00Z"</span>
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GDPR ══ -->
+<div id="sec-gdpr" class="api-section">
+  <div class="section-head">
+    <h2>GDPR Endpoints</h2>
+    <p class="section-desc">Dedicated GDPR management endpoints for consent, data subject rights, and erasure. These require crm.gdpr scope. All operations create immutable audit entries and rights_request records. DPO dashboard uses these endpoints.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/contacts/<span class="param">{contactId}</span>/consent</span>
+      <span class="ep-summary">Record consent grant or withdrawal — immutable append</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR Art.7</span><span class="ep-tag tag-audit">immutable</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block"><span class="comment">// Grant consent</span>
+{
+  <span class="key">"action"</span>: <span class="str">"grant"</span>,
+  <span class="key">"consentType"</span>: <span class="str">"marketing_email"</span>,
+  <span class="key">"version"</span>: <span class="str">"v2.1"</span>,
+  <span class="key">"channel"</span>: <span class="str">"web_form"</span>,
+  <span class="key">"givenAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>,
+  <span class="key">"ipAddress"</span>: <span class="str">"192.0.2.1"</span>   <span class="comment">// stored hashed</span>
+}
+
+<span class="comment">// Withdraw consent</span>
+{
+  <span class="key">"action"</span>: <span class="str">"withdraw"</span>,
+  <span class="key">"consentType"</span>: <span class="str">"marketing_email"</span>,
+  <span class="key">"withdrawnAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>,
+  <span class="key">"reason"</span>: <span class="str">"user_request"</span>
+  <span class="comment">// Sets marketingSuppressed=true if last marketing consent</span>
+}</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200</div>
+        <div class="code-block">{
+  <span class="key">"consentId"</span>: <span class="str">"con_01jb3x9k2p4n8m1q7"</span>,
+  <span class="key">"action"</span>: <span class="str">"withdraw"</span>,
+  <span class="key">"consentType"</span>: <span class="str">"marketing_email"</span>,
+  <span class="key">"recordedAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>,
+  <span class="key">"marketingSuppressedNow"</span>: <span class="bool">true</span>,
+  <span class="comment">// Immediately suppressed across ALL campaigns</span>
+  <span class="key">"auditLogId"</span>: <span class="str">"aud_01jb3x9k2p5n9m3"</span>
+}</div>
+        <div class="comp-note gdpr"><strong>🔴 GDPR Art. 7(3)</strong>Consent withdrawal takes effect immediately. marketingSuppressed is set synchronously — not async. Withdrawal records are immutable (append-only). The consent array is never modified, only appended to.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/gdpr/rights-requests</span>
+      <span class="ep-summary">Submit a data subject rights request (Art. 15–22)</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR Art.12</span><span class="ep-tag tag-audit">immutable</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block">{
+  <span class="key">"contactId"</span>: <span class="str">"c_01j8x4k2p9n3m7q6r5"</span>,
+  <span class="key">"type"</span>: <span class="str">"access"</span>,
+  <span class="comment">// access | erasure | rectification |</span>
+  <span class="comment">// restriction | portability | objection | human_review</span>
+  <span class="key">"verificationToken"</span>: <span class="str">"vt_01jb3..."</span>,
+  <span class="comment">// Identity verification before fulfilling</span>
+  <span class="key">"notes"</span>: <span class="str">"Please send me all data you hold about me"</span>
+}</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 201</div>
+        <div class="code-block">{
+  <span class="key">"id"</span>: <span class="str">"rr_01jb3x9k2p4n8m1q7"</span>,
+  <span class="key">"type"</span>: <span class="str">"access"</span>,
+  <span class="key">"status"</span>: <span class="str">"received"</span>,
+  <span class="key">"receivedAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>,
+  <span class="key">"dueDateAt"</span>: <span class="str">"2026-05-15T09:31:00Z"</span>,
+  <span class="comment">// Art. 12: 30-day deadline auto-calculated</span>
+  <span class="key">"assignedDpo"</span>: <span class="str">"dpo@yourdomain.dk"</span>,
+  <span class="key">"trackingUrl"</span>: <span class="str">"https://crm.yourdomain.dk/rights/rr_01jb3..."</span>
+}</div>
+        <div class="comp-note gdpr"><strong>📋 GDPR Art. 12 — 30-Day Deadline</strong>dueDateAt is auto-calculated as receivedAt + 30 days. The DPO dashboard flags overdue requests. Finanstilsynet can request evidence of rights request handling during audits.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-GET">GET</span>
+      <span class="ep-path">/v1/contacts/<span class="param">{contactId}</span>/export</span>
+      <span class="ep-summary">Full data portability export — GDPR Art. 20</span>
+      <div class="ep-tags"><span class="ep-tag tag-gdpr">GDPR Art.20</span><span class="ep-tag tag-audit">audit</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Description</div>
+        <div class="code-block"><span class="comment">// Returns all personal data held about a contact</span>
+<span class="comment">// across ALL containers — machine-readable JSON</span>
+<span class="comment">// Requires: crm.gdpr scope + rights_request verification</span>
+<span class="comment">// Response is streamed as NDJSON for large datasets</span>
+
+<span class="comment">// Scope of export includes:</span>
+<span class="comment">// - Contact record (all fields)</span>
+<span class="comment">// - All activities (metadata only, not email bodies)</span>
+<span class="comment">// - All ticket subjects and statuses</span>
+<span class="comment">// - Lead score history with factors</span>
+<span class="comment">// - Consent history (full append log)</span>
+<span class="comment">// - Audit log entries WHERE resourceId=contactId</span>
+<span class="comment">// - Stacc snapshot (if PSD2 consent active)</span></div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200 (NDJSON stream)</div>
+        <div class="code-block"><span class="comment">// Content-Type: application/x-ndjson</span>
+<span class="comment">// X-Export-Format: gdpr-art20-v1</span>
+{ <span class="key">"section"</span>: <span class="str">"contact"</span>, <span class="key">"data"</span>: { <span class="comment">/* full contact */</span> } }
+{ <span class="key">"section"</span>: <span class="str">"consents"</span>, <span class="key">"data"</span>: [ <span class="comment">/* consent history */</span> ] }
+{ <span class="key">"section"</span>: <span class="str">"activities"</span>, <span class="key">"data"</span>: [ <span class="comment">/* activities */</span> ] }
+{ <span class="key">"section"</span>: <span class="str">"tickets"</span>, <span class="key">"data"</span>: [ <span class="comment">/* tickets */</span> ] }
+{ <span class="key">"section"</span>: <span class="str">"lead_scores"</span>, <span class="key">"data"</span>: [ <span class="comment">/* scores + factors */</span> ] }
+{ <span class="key">"section"</span>: <span class="str">"audit_references"</span>, <span class="key">"data"</span>: [ <span class="comment">/* audit entries */</span> ] }</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STACC ══ -->
+<div id="sec-stacc" class="api-section">
+  <div class="section-head">
+    <h2>Stacc Integration</h2>
+    <p class="section-desc">All Stacc financial data access is gated by active PSD2 consent. Every call is logged with sensitiveAccess=true. Financial data is never cached beyond the snapshot TTL. Stacc webhook events are received and processed via the inbound webhook endpoint.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-GET">GET</span>
+      <span class="ep-path">/v1/contacts/<span class="param">{contactId}</span>/financial</span>
+      <span class="ep-summary">Retrieve Stacc financial snapshot — PSD2 consent required</span>
+      <div class="ep-tags"><span class="ep-tag tag-stacc">Stacc PSD2</span><span class="ep-tag tag-fin">encrypted</span><span class="ep-tag tag-gdpr">GDPR</span><span class="ep-tag tag-audit">sensitiveAccess</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Access Control</div>
+        <div class="code-block"><span class="comment">// Required: scope crm.financial</span>
+<span class="comment">// Required: contact has valid Stacc PSD2 consent</span>
+<span class="comment">// Required: consentExpiresAt > now()</span>
+<span class="comment">// All access: audit_log sensitiveAccess=true</span>
+
+<span class="comment">// Fields returned depend on user scope:</span>
+<span class="comment">// crm.financial.summary → creditBand, kycStatus, amlStatus</span>
+<span class="comment">// crm.financial.full    → + scores, assets, liabilities, products</span>
+<span class="comment">// crm.financial.aml     → + amlFlags (compliance team only)</span></div>
+        <div class="comp-note fin"><strong>🏦 PSD2 Consent Expiry</strong>If staccSnapshot.consentExpiresAt &lt; now(), API returns 403 with code STACC_CONSENT_EXPIRED. The client must trigger a new PSD2 consent flow via POST /v1/contacts/{id}/stacc/consent-refresh.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200 (summary scope)</div>
+        <div class="code-block">{
+  <span class="key">"contactId"</span>: <span class="str">"c_01j8x4k2p9n3m7q6r5"</span>,
+  <span class="key">"staccCustomerId"</span>: <span class="str">"sta_dk_29381..."</span>,
+  <span class="key">"creditBand"</span>: <span class="str">"good"</span>,
+  <span class="key">"kycStatus"</span>: <span class="str">"verified"</span>,
+  <span class="key">"amlStatus"</span>: <span class="str">"clear"</span>,
+  <span class="key">"consentExpiresAt"</span>: <span class="str">"2026-10-15T00:00:00Z"</span>,
+  <span class="key">"lastSyncedAt"</span>: <span class="str">"2026-04-15T08:00:00Z"</span>,
+  <span class="key">"_accessLevel"</span>: <span class="str">"summary"</span>,
+  <span class="key">"_auditLogId"</span>: <span class="str">"aud_01jb3x9k2p5n9m3"</span>
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/webhooks/stacc</span>
+      <span class="ep-summary">Receive Stacc Xchange webhook events</span>
+      <div class="ep-tags"><span class="ep-tag tag-stacc">Stacc webhook</span><span class="ep-tag tag-fin">HMAC-SHA256</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Verification + Event Types</div>
+        <div class="code-block"><span class="comment">// Webhook signature verification (always validate first)</span>
+<span class="header-key">X-Stacc-Signature:</span> <span class="header-val">sha256=abc123...</span>
+<span class="comment">// Verify: HMAC-SHA256(secret, rawBody) === signature</span>
+<span class="comment">// Reject with 401 if invalid — do not process payload</span>
+
+<span class="comment">// Handled event types:</span>
+<span class="str">"credit_score_updated"</span>   → refresh staccSnapshot
+<span class="str">"kyc_status_changed"</span>      → update kycStatus + audit
+<span class="str">"aml_flag_raised"</span>         → alert compliance team (immutable)
+<span class="str">"consent_expired"</span>         → set consentExpiresAt + flag contact
+<span class="str">"product_renewed"</span>         → update activeProducts
+<span class="str">"payment_overdue"</span>         → create high-priority ticket</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response</div>
+        <div class="code-block"><span class="comment">// Always respond 200 immediately</span>
+<span class="comment">// Process event async via Azure Service Bus</span>
+<span class="comment">// Stacc retries on non-2xx for up to 24h</span>
+{
+  <span class="key">"received"</span>: <span class="bool">true</span>,
+  <span class="key">"eventId"</span>: <span class="str">"evt_01jb3x9k2p5n9m2r8"</span>,
+  <span class="key">"queuedAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>
+}</div>
+        <div class="comp-note dora"><strong>⚡ DORA — Third-party Incident Monitoring</strong>If Stacc webhook delivery fails for &gt;15 minutes (circuit breaker open), an ICT incident is created automatically. Classified as a third-party ICT disruption per DORA Art. 17. Notification to Finanstilsynet if duration &gt;4h.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ M365 ══ -->
+<div id="sec-m365" class="api-section">
+  <div class="section-head">
+    <h2>Microsoft 365 Integration</h2>
+    <p class="section-desc">M365 sync is managed via Microsoft Graph API under the hood. The CRM exposes simplified sync endpoints. Email bodies are never stored — only metadata (subject, timestamp, count). Meeting summaries via Azure OpenAI are opt-in and disclosed to participants.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/contacts/<span class="param">{contactId}</span>/m365/sync</span>
+      <span class="ep-summary">Trigger M365 Graph sync for a contact</span>
+      <div class="ep-tags"><span class="ep-tag tag-m365">Graph API</span><span class="ep-tag tag-gdpr">GDPR</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block">{
+  <span class="key">"syncTypes"</span>: [
+    <span class="str">"email_metadata"</span>,   <span class="comment">// subject + timestamp only</span>
+    <span class="str">"calendar_events"</span>,  <span class="comment">// meeting titles + times</span>
+    <span class="str">"teams_presence"</span>    <span class="comment">// live presence (virtual field)</span>
+  ],
+  <span class="key">"lookbackDays"</span>: <span class="num">30</span>
+  <span class="comment">// Email BODY is never stored — GDPR minimisation</span>
+}</div>
+        <div class="comp-note gdpr"><strong>📋 GDPR — Email Minimisation</strong>Email bodies from Outlook are never stored in the CRM (data minimisation, Art. 5(1)(c)). Only: subject, timestamp, sender/recipient direction, and 30-day count. If a user needs to log email content, they must manually create an Activity note.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200</div>
+        <div class="code-block">{
+  <span class="key">"synced"</span>: <span class="bool">true</span>,
+  <span class="key">"syncedAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>,
+  <span class="key">"m365Profile"</span>: {
+    <span class="key">"lastEmailAt"</span>: <span class="str">"2026-04-14T16:22:00Z"</span>,
+    <span class="key">"emailCount30d"</span>: <span class="num">12</span>,
+    <span class="key">"lastMeetingAt"</span>: <span class="str">"2026-04-10T10:00:00Z"</span>,
+    <span class="key">"teamsPresence"</span>: <span class="str">"available"</span>
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WEBHOOKS ══ -->
+<div id="sec-webhooks" class="api-section">
+  <div class="section-head">
+    <h2>Outbound Webhooks</h2>
+    <p class="section-desc">The CRM publishes events to registered webhook endpoints. Used to integrate with external systems, Logic Apps, and custom automation. All webhook payloads are signed with HMAC-SHA256.</p>
+  </div>
+
+  <div class="overview-grid">
+    <div class="ov-box">
+      <div class="ov-box-title">📤 Available Events</div>
+      <ul class="ov-list">
+        <li><strong>contact.created</strong> — New contact added</li>
+        <li><strong>contact.updated</strong> — Contact fields changed</li>
+        <li><strong>contact.consent_changed</strong> — Consent grant/withdraw</li>
+        <li><strong>contact.erasure_completed</strong> — GDPR erasure done</li>
+        <li><strong>deal.stage_changed</strong> — Pipeline stage transition</li>
+        <li><strong>deal.won / deal.lost</strong> — Deal outcome</li>
+        <li><strong>ticket.created</strong> — New support ticket</li>
+        <li><strong>ticket.sla_breached</strong> — SLA deadline missed</li>
+        <li><strong>ticket.complaint_filed</strong> — isComplaint=true</li>
+        <li><strong>rights_request.received</strong> — New GDPR rights request</li>
+        <li><strong>rights_request.overdue</strong> — 30-day deadline approaching</li>
+        <li><strong>stacc.aml_flag</strong> — AML flag raised on contact</li>
+      </ul>
+    </div>
+    <div class="ov-box">
+      <div class="ov-box-title">🔐 Webhook Security</div>
+      <ul class="ov-list">
+        <li><strong>Signing:</strong> HMAC-SHA256(secret, rawBody)</li>
+        <li><strong>Header:</strong> X-CRM-Signature: sha256={hash}</li>
+        <li><strong>Timestamp:</strong> X-CRM-Timestamp (reject if &gt;5min old)</li>
+        <li><strong>Retry:</strong> Exponential backoff, up to 72h</li>
+        <li><strong>Timeout:</strong> 10s — respond immediately, process async</li>
+        <li><strong>TLS:</strong> HTTPS only. TLS 1.2+ required on receiver.</li>
+        <li><strong>IP allowlist:</strong> Available for tenant whitelisting</li>
+        <li><strong>DORA:</strong> Delivery failures &gt;15min trigger incident log</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AUDIT ══ -->
+<div id="sec-audit" class="api-section">
+  <div class="section-head">
+    <h2>Audit Log</h2>
+    <p class="section-desc">Immutable audit trail. Required for GDPR Art. 30 (RoPA evidence), DORA ICT audit, and Finanstilsynet supervision. Read-only. Requires crm.admin or crm.gdpr scope. Minimum 1-year retention enforced at Cosmos DB level.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-GET">GET</span>
+      <span class="ep-path">/v1/audit-log</span>
+      <span class="ep-summary">Query audit log — GDPR + DORA compliance reporting</span>
+      <div class="ep-tags"><span class="ep-tag tag-dora">DORA</span><span class="ep-tag tag-gdpr">GDPR Art.30</span><span class="ep-tag tag-auth">admin only</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Query Parameters</div>
+        <table class="params-table">
+          <tr><th>Param</th><th>Type</th><th>Req?</th><th>Description</th></tr>
+          <tr><td class="p-name">resourceId</td><td class="p-type">uuid</td><td><span class="p-opt">opt</span></td><td>All audit entries for a specific record (for Art. 15 access requests)</td></tr>
+          <tr><td class="p-name">action</td><td class="p-type">enum</td><td><span class="p-opt">opt</span></td><td>Filter by action type</td></tr>
+          <tr><td class="p-name">sensitiveAccessOnly</td><td class="p-type">boolean</td><td><span class="p-opt">opt</span></td><td>Only financial/PII access events (DORA report)</td></tr>
+          <tr><td class="p-name">from</td><td class="p-type">datetime</td><td><span class="p-opt">opt</span></td><td>Start of time range (ISO 8601 UTC)</td></tr>
+          <tr><td class="p-name">to</td><td class="p-type">datetime</td><td><span class="p-opt">opt</span></td><td>End of time range</td></tr>
+          <tr><td class="p-name">userId</td><td class="p-type">uuid</td><td><span class="p-opt">opt</span></td><td>Filter by acting user</td></tr>
+          <tr><td class="p-name">limit</td><td class="p-type">integer</td><td><span class="p-opt">opt</span></td><td>Max 500 per page</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200</div>
+        <div class="code-block">{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"aud_01jb3x9k2p5n9m3r8"</span>,
+      <span class="key">"actor"</span>: {
+        <span class="key">"userId"</span>: <span class="str">"u_01j8x4k2p9n3m7q6r5"</span>,
+        <span class="key">"email"</span>: <span class="str">"anna@yourbank.dk"</span>,
+        <span class="key">"role"</span>: <span class="str">"sales"</span>
+      },
+      <span class="key">"action"</span>: <span class="str">"read"</span>,
+      <span class="key">"resourceType"</span>: <span class="str">"contact"</span>,
+      <span class="key">"resourceId"</span>: <span class="str">"c_01j8x4k2p9n3m7q6r5"</span>,
+      <span class="key">"sensitiveAccess"</span>: <span class="bool">true</span>,
+      <span class="key">"gdprPurpose"</span>: <span class="str">"crm_sales"</span>,
+      <span class="key">"timestamp"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>
+    }
+  ],
+  <span class="key">"pagination"</span>: { <span class="key">"hasMore"</span>: <span class="bool">true</span>, <span class="key">"continuationToken"</span>: <span class="str">"eyJ..."</span> }
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DORA ══ -->
+<div id="sec-dora" class="api-section">
+  <div class="section-head">
+    <h2>DORA Incident Reporting</h2>
+    <p class="section-desc">Endpoints for ICT incident management per DORA Art. 17–23. Major incidents must be reported to Finanstilsynet within 4 hours of classification. The CRM auto-classifies incidents from Azure Monitor alerts; this API also supports manual creation.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-POST">POST</span>
+      <span class="ep-path">/v1/incidents/dora</span>
+      <span class="ep-summary">Create and classify a DORA ICT incident</span>
+      <div class="ep-tags"><span class="ep-tag tag-dora">DORA Art.17</span><span class="ep-tag tag-auth">admin/ciso</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Request Body</div>
+        <div class="code-block">{
+  <span class="key">"title"</span>: <span class="str">"Stacc API degraded — response times &gt;10s"</span>,
+  <span class="key">"type"</span>: <span class="str">"third_party_disruption"</span>,
+  <span class="comment">// cyber_attack | data_breach | system_outage</span>
+  <span class="comment">// third_party_disruption | data_loss | other</span>
+  <span class="key">"severity"</span>: <span class="str">"major"</span>,
+  <span class="comment">// major | significant | minor</span>
+  <span class="comment">// major → triggers auto-report to Finanstilsynet</span>
+  <span class="key">"affectedSystems"</span>: [<span class="str">"stacc_integration"</span>],
+  <span class="key">"estimatedImpact"</span>: {
+    <span class="key">"affectedTenants"</span>: <span class="num">3</span>,
+    <span class="key">"affectedUsers"</span>: <span class="num">47</span>,
+    <span class="key">"dataCompromised"</span>: <span class="bool">false</span>
+  },
+  <span class="key">"detectedAt"</span>: <span class="str">"2026-04-15T08:55:00Z"</span>
+}</div>
+        <div class="comp-note dora"><strong>⚡ DORA Reporting Timeline</strong>If severity=major: API automatically queues initial notification to Finanstilsynet (due within 4h of classification). Sets reminder for 72h intermediate report and 1-month final report. All timeline events tracked in the incident record.</div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 201</div>
+        <div class="code-block">{
+  <span class="key">"id"</span>: <span class="str">"inc_01jb3x9k2p4n8m1q7r5"</span>,
+  <span class="key">"severity"</span>: <span class="str">"major"</span>,
+  <span class="key">"status"</span>: <span class="str">"open"</span>,
+  <span class="key">"doraReporting"</span>: {
+    <span class="key">"initialReportDue"</span>: <span class="str">"2026-04-15T12:55:00Z"</span>,
+    <span class="comment">// T+4h from classification</span>
+    <span class="key">"intermediateReportDue"</span>: <span class="str">"2026-04-18T08:55:00Z"</span>,
+    <span class="comment">// T+72h</span>
+    <span class="key">"finalReportDue"</span>: <span class="str">"2026-05-15T08:55:00Z"</span>,
+    <span class="comment">// T+1 month</span>
+    <span class="key">"finanstilsynetPortalUrl"</span>: <span class="str">"https://indberetning.finanstilsynet.dk/..."</span>,
+    <span class="key">"autoNotificationQueued"</span>: <span class="bool">true</span>
+  },
+  <span class="key">"gdprAssessment"</span>: {
+    <span class="key">"potentialDataBreach"</span>: <span class="bool">false</span>,
+    <span class="key">"datatilsynetNotificationRequired"</span>: <span class="bool">false</span>
+  },
+  <span class="key">"createdAt"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="ep-method method-GET">GET</span>
+      <span class="ep-path">/v1/health</span>
+      <span class="ep-summary">System health check — no auth required, DORA uptime monitoring</span>
+      <div class="ep-tags"><span class="ep-tag tag-dora">DORA</span></div>
+      <span class="ep-chevron">▶</span>
+    </div>
+    <div class="ep-body">
+      <div>
+        <div class="ep-col-title">Description</div>
+        <div class="code-block"><span class="comment">// No authentication required</span>
+<span class="comment">// Polled by Azure Monitor every 30 seconds</span>
+<span class="comment">// Used by Finanstilsynet for availability reporting</span>
+<span class="comment">// Response time SLA: &lt;200ms</span></div>
+      </div>
+      <div>
+        <div class="ep-col-title">Response 200 / 503</div>
+        <div class="code-block">{
+  <span class="key">"status"</span>: <span class="str">"healthy"</span>,
+  <span class="comment">// healthy | degraded | unhealthy</span>
+  <span class="key">"version"</span>: <span class="str">"1.0.0"</span>,
+  <span class="key">"region"</span>: <span class="str">"EU_NORTH"</span>,
+  <span class="key">"timestamp"</span>: <span class="str">"2026-04-15T09:31:00Z"</span>,
+  <span class="key">"dependencies"</span>: {
+    <span class="key">"cosmosDb"</span>: <span class="str">"healthy"</span>,
+    <span class="key">"staccApi"</span>: <span class="str">"healthy"</span>,
+    <span class="key">"m365Graph"</span>: <span class="str">"healthy"</span>,
+    <span class="key">"serviceBus"</span>: <span class="str">"healthy"</span>,
+    <span class="key">"keyVault"</span>: <span class="str">"healthy"</span>
+  },
+  <span class="key">"uptime"</span>: <span class="num">99.98</span>
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+function show(sec) {
+  document.querySelectorAll('.api-section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('visible');
+  event.currentTarget && event.currentTarget.classList.add('active');
+  document.querySelector('.main').scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.ep-chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>
