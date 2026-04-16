@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Database Schema — Danish Finance</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Bebas+Neue&family=Barlow:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #0c0e12;
+  --panel: #13161d;
+  --panel2: #191d27;
+  --border: #252b3b;
+  --text: #d8dce8;
+  --muted: #4e5670;
+  --bright: #eef0f8;
+
+  --c-identity:   #4a9eff;
+  --c-contact:    #34d58e;
+  --c-financial:  #f59e0b;
+  --c-sales:      #f97316;
+  --c-support:    #a78bfa;
+  --c-marketing:  #ec4899;
+  --c-gdpr:       #ef4444;
+  --c-audit:      #6ee7b7;
+  --c-stacc:      #22d3ee;
+  --c-m365:       #60a5fa;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+}
+
+/* ─── NAV ─── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(12,14,18,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 48px;
+  overflow-x: auto;
+}
+
+.topbar-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  color: var(--bright);
+  margin-right: 24px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  padding: 0 12px;
+  height: 48px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, border-bottom 0.2s;
+  border-bottom: 2px solid transparent;
+  letter-spacing: 0.05em;
+}
+.nav-btn:hover { color: var(--text); }
+.nav-btn.active { color: var(--bright); border-bottom-color: var(--c-identity); }
+
+/* ─── LAYOUT ─── */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ─── HEADER ─── */
+.page-header {
+  margin-bottom: 40px;
+}
+
+.header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 5vw, 60px);
+  letter-spacing: 0.06em;
+  color: var(--bright);
+  line-height: 1;
+}
+
+.header-sub {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── SECTION ─── */
+.schema-section {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.schema-section.visible { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-intro {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  line-height: 1.7;
+  max-width: 720px;
+  padding: 16px;
+  background: var(--panel);
+  border-left: 3px solid var(--border);
+}
+
+/* ─── ENTITY GROUP ─── */
+.entity-group {
+  margin-bottom: 40px;
+}
+
+.group-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.entities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 16px;
+}
+
+/* ─── ENTITY CARD ─── */
+.entity {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.entity:hover { border-color: rgba(255,255,255,0.15); }
+
+.entity-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.entity-name {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.entity-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.e-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.entity-desc {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* ─── FIELD TABLE ─── */
+.field-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.field-table th {
+  font-family: 'Fira Code', monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 10px;
+  text-align: left;
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border);
+}
+
+.field-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(37,43,59,0.6);
+  vertical-align: top;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.field-table tr:last-child td { border-bottom: none; }
+.field-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.field-name {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--bright);
+  white-space: nowrap;
+}
+
+.field-key {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  color: #f59e0b;
+  white-space: nowrap;
+}
+
+.field-type {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: #60a5fa;
+  white-space: nowrap;
+}
+
+.field-desc { color: var(--muted); }
+
+.field-flags {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.flag {
+  font-family: 'Fira Code', monospace;
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.flag-gdpr    { background: rgba(239,68,68,0.2);   color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+.flag-enc     { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+.flag-req     { background: rgba(74,158,255,0.15); color: #93c5fd; border: 1px solid rgba(74,158,255,0.3); }
+.flag-idx     { background: rgba(52,213,142,0.12); color: #6ee7b7; border: 1px solid rgba(52,213,142,0.25); }
+.flag-auto    { background: rgba(167,139,250,0.15); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.3); }
+.flag-stacc   { background: rgba(34,211,238,0.12); color: #67e8f9; border: 1px solid rgba(34,211,238,0.25); }
+.flag-immut   { background: rgba(110,231,183,0.12); color: #6ee7b7; border: 1px solid rgba(110,231,183,0.25); }
+.flag-virtual { background: rgba(156,163,175,0.12); color: #9ca3af; border: 1px solid rgba(156,163,175,0.25); }
+
+/* ─── RELATIONSHIPS ─── */
+.rel-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.rel-header {
+  padding: 10px 16px;
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rel-list { padding: 8px 0; }
+
+.rel-item {
+  display: grid;
+  grid-template-columns: 160px 50px 160px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 7px 16px;
+  border-bottom: 1px solid rgba(37,43,59,0.5);
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.rel-item:last-child { border-bottom: none; }
+.rel-item:hover { background: rgba(255,255,255,0.02); }
+
+.rel-from { font-family: 'Fira Code', monospace; font-size: 11px; color: var(--bright); }
+.rel-type { font-family: 'Fira Code', monospace; font-size: 10px; color: var(--c-financial); text-align: center; }
+.rel-to   { font-family: 'Fira Code', monospace; font-size: 11px; color: var(--c-identity); }
+.rel-note { color: var(--muted); font-size: 11px; }
+
+/* ─── GDPR MAP ─── */
+.gdpr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.gdpr-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.gdpr-card-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gdpr-card-title .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.gdpr-list { list-style: none; }
+.gdpr-list li {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(37,43,59,0.5);
+  padding-left: 12px;
+  position: relative;
+  line-height: 1.5;
+}
+.gdpr-list li:last-child { border-bottom: none; }
+.gdpr-list li::before { content: '›'; position: absolute; left: 0; color: var(--c-gdpr); }
+
+/* ─── INDEX STRATEGY ─── */
+.index-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.index-table th {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 14px;
+  text-align: left;
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border);
+}
+
+.index-table td {
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(37,43,59,0.5);
+  vertical-align: top;
+}
+
+.index-table tr:last-child td { border-bottom: none; }
+.index-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.index-table td:first-child { font-family: 'Fira Code', monospace; font-size: 11px; color: var(--c-sales); }
+.index-table td:nth-child(2) { font-family: 'Fira Code', monospace; font-size: 11px; color: var(--bright); }
+.index-table td:nth-child(3) { font-family: 'Fira Code', monospace; font-size: 10px; color: var(--c-identity); }
+.index-table td:nth-child(4) { color: var(--muted); font-size: 11px; }
+
+/* ─── PARTITION STRATEGY ─── */
+.partition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.part-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.part-container {
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--bright);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.part-key {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--c-financial);
+  margin-bottom: 8px;
+}
+
+.part-reason { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+@media (max-width: 600px) {
+  .entities-grid { grid-template-columns: 1fr; }
+  .rel-item { grid-template-columns: 1fr 40px 1fr; }
+  .rel-note { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="topbar">
+  <div class="topbar-title">CRM·SCHEMA</div>
+  <button class="nav-btn active" onclick="show('core')">Core Entities</button>
+  <button class="nav-btn" onclick="show('sales')">Sales</button>
+  <button class="nav-btn" onclick="show('support')">Support</button>
+  <button class="nav-btn" onclick="show('marketing')">Marketing</button>
+  <button class="nav-btn" onclick="show('integrations')">Integrations</button>
+  <button class="nav-btn" onclick="show('gdpr')">GDPR Layer</button>
+  <button class="nav-btn" onclick="show('indexes')">Indexes & Partitions</button>
+  <button class="nav-btn" onclick="show('relationships')">Relationships</button>
+</div>
+
+<div class="page">
+
+  <div class="page-header">
+    <div class="header-sub">// DATABASE SCHEMA · Azure Cosmos DB (NoSQL) · v1.0</div>
+    <div class="header-row">
+      <h1>CRM Data Model</h1>
+    </div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--c-gdpr)"></div>GDPR Personal Data</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--c-financial)"></div>Financial / Encrypted</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--c-identity)"></div>Identity / Required</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--c-audit)"></div>Audit / Immutable</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--c-stacc)"></div>Stacc Integration</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--c-m365)"></div>M365 Integration</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--c-sales)"></div>Auto-generated</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#6b7280"></div>Indexed</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: CORE ENTITIES
+  ════════════════════════════════════════════ -->
+  <div id="sec-core" class="schema-section visible">
+    <div class="section-intro">
+      Core entities form the foundation of the CRM. All personal data fields are marked for GDPR compliance. Encrypted fields (🔒) are stored encrypted at field level in Cosmos DB using customer-managed keys (CMK) via Azure Key Vault — mandatory for financial data under Danish law.
+    </div>
+
+    <div class="entity-group">
+      <div class="group-label">// Tenant & Identity</div>
+      <div class="entities-grid">
+
+        <!-- TENANT -->
+        <div class="entity">
+          <div class="entity-header" style="border-left: 3px solid var(--c-identity)">
+            <div class="entity-name" style="color:var(--c-identity)">tenants</div>
+            <div class="entity-meta">
+              <span class="e-badge" style="color:var(--c-identity);border-color:var(--c-identity)">container</span>
+            </div>
+          </div>
+          <div class="entity-desc">Top-level multi-tenant isolation. Each financial institution is a separate tenant. Partition key: /tenantId</div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+            <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Tenant unique identifier</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">name</td><td class="field-type">string</td><td class="field-desc">Organisation legal name</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">cvrNumber</td><td class="field-type">string</td><td class="field-desc">Danish CVR business registration number</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">finanstilsynetId</td><td class="field-type">string?</td><td class="field-desc">Finanstilsynet registration ID (if regulated entity)</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">plan</td><td class="field-type">enum</td><td class="field-desc">starter | professional | enterprise</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">dataResidency</td><td class="field-type">enum</td><td class="field-desc">EU_NORTH | EU_WEST (Azure region)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">dpoEmail</td><td class="field-type">string</td><td class="field-desc">Data Protection Officer contact email</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">retentionPolicy</td><td class="field-type">object</td><td class="field-desc">{contactMonths, financialMonths, auditMonths}</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+            <tr><td class="field-name">encryptionKeyId</td><td class="field-type">string</td><td class="field-desc">Azure Key Vault CMK reference for this tenant</td><td><div class="field-flags"><span class="flag flag-enc">enc</span><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">settings</td><td class="field-type">object</td><td class="field-desc">Feature flags, module config, locale (da-DK)</td><td></td></tr>
+            <tr><td class="field-name">createdAt</td><td class="field-type">datetime</td><td class="field-desc">ISO 8601 UTC timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+          </table>
+        </div>
+
+        <!-- USER -->
+        <div class="entity">
+          <div class="entity-header" style="border-left: 3px solid var(--c-m365)">
+            <div class="entity-name" style="color:var(--c-m365)">users</div>
+            <div class="entity-meta">
+              <span class="e-badge" style="color:var(--c-m365);border-color:var(--c-m365)">container</span>
+            </div>
+          </div>
+          <div class="entity-desc">CRM platform users (employees). Synced with Azure Entra ID (M365). Personal data — subject to GDPR Art. 88 (employee data).</div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+            <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">CRM user ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Parent tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">entraObjectId</td><td class="field-type">string</td><td class="field-desc">Azure Entra ID (AAD) Object ID</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">email</td><td class="field-type">string</td><td class="field-desc">Work email (from M365)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">displayName</td><td class="field-type">string</td><td class="field-desc">Full name (from M365)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+            <tr><td class="field-name">role</td><td class="field-type">enum</td><td class="field-desc">admin | manager | sales | support | marketing | readonly</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">modules</td><td class="field-type">string[]</td><td class="field-desc">Permitted CRM module access list</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">lastLoginAt</td><td class="field-type">datetime?</td><td class="field-desc">Last successful login timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">isActive</td><td class="field-type">boolean</td><td class="field-desc">Soft-delete / deactivation flag</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="entity-group">
+      <div class="group-label">// Contact & Account</div>
+      <div class="entities-grid">
+
+        <!-- CONTACT -->
+        <div class="entity">
+          <div class="entity-header" style="border-left: 3px solid var(--c-gdpr)">
+            <div class="entity-name" style="color:var(--c-gdpr)">contacts</div>
+            <div class="entity-meta">
+              <span class="e-badge" style="color:var(--c-gdpr);border-color:var(--c-gdpr)">PII</span>
+              <span class="e-badge" style="color:var(--c-financial);border-color:var(--c-financial)">encrypted</span>
+            </div>
+          </div>
+          <div class="entity-desc">Individual persons — customers, prospects, leads. Core GDPR entity. Data subject rights apply. Partition key: /tenantId</div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+            <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Contact unique ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">type</td><td class="field-type">enum</td><td class="field-desc">customer | prospect | lead | partner</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">firstName</td><td class="field-type">string</td><td class="field-desc">First name</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">lastName</td><td class="field-type">string</td><td class="field-desc">Last name</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">email</td><td class="field-type">string?</td><td class="field-desc">Primary email address</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">phone</td><td class="field-type">string?</td><td class="field-desc">Phone number (E.164 format)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-enc">enc</span></div></td></tr>
+            <tr><td class="field-name">cprNumber</td><td class="field-type">string?</td><td class="field-desc">Danish CPR personal ID (if required for KYC). NEVER store in plain text.</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-enc">enc</span></div></td></tr>
+            <tr><td class="field-name">address</td><td class="field-type">object?</td><td class="field-desc">{street, city, postalCode, country}</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-enc">enc</span></div></td></tr>
+            <tr><td class="field-name">accountId</td><td class="field-type">uuid?</td><td class="field-desc">Parent organisation/account</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">ownerId</td><td class="field-type">uuid</td><td class="field-desc">Assigned CRM user (relationship manager)</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">tags</td><td class="field-type">string[]</td><td class="field-desc">Classification tags (VIP, etc.)</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">source</td><td class="field-type">enum?</td><td class="field-desc">web | import | manual | m365 | stacc | referral</td><td></td></tr>
+            <tr><td class="field-name">gdpr</td><td class="field-type">object</td><td class="field-desc">See GDPR Layer section for full schema</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+            <tr><td class="field-name">retentionExpiresAt</td><td class="field-type">datetime</td><td class="field-desc">Calculated deletion/review date</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">isAnonymised</td><td class="field-type">boolean</td><td class="field-desc">True if erasure has been applied</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">createdAt</td><td class="field-type">datetime</td><td class="field-desc">Creation timestamp UTC</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">updatedAt</td><td class="field-type">datetime</td><td class="field-desc">Last update timestamp UTC</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">_ts</td><td class="field-type">number</td><td class="field-desc">Cosmos DB system timestamp (epoch)</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+          </table>
+        </div>
+
+        <!-- ACCOUNT -->
+        <div class="entity">
+          <div class="entity-header" style="border-left: 3px solid var(--c-contact)">
+            <div class="entity-name" style="color:var(--c-contact)">accounts</div>
+            <div class="entity-meta">
+              <span class="e-badge" style="color:var(--c-contact);border-color:var(--c-contact)">org</span>
+            </div>
+          </div>
+          <div class="entity-desc">Organisations, companies, or households. Parent entity for contacts. May have financial data from Stacc. Partition key: /tenantId</div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+            <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Account unique ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">name</td><td class="field-type">string</td><td class="field-desc">Organisation legal name</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">cvrNumber</td><td class="field-type">string?</td><td class="field-desc">Danish CVR registration number</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">industry</td><td class="field-type">string?</td><td class="field-desc">NACE / industry classification code</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">size</td><td class="field-type">enum?</td><td class="field-desc">micro | small | medium | large | enterprise</td><td></td></tr>
+            <tr><td class="field-name">website</td><td class="field-type">string?</td><td class="field-desc">Organisation website URL</td><td></td></tr>
+            <tr><td class="field-name">address</td><td class="field-type">object?</td><td class="field-desc">{street, city, postalCode, country}</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+            <tr><td class="field-name">ownerId</td><td class="field-type">uuid</td><td class="field-desc">Assigned relationship manager (user)</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">staccData</td><td class="field-type">object?</td><td class="field-desc">Embedded Stacc snapshot (see Integrations tab)</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+            <tr><td class="field-name">amlStatus</td><td class="field-type">enum?</td><td class="field-desc">clear | flagged | pending | restricted</td><td><div class="field-flags"><span class="flag flag-enc">enc</span><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">kycCompletedAt</td><td class="field-type">datetime?</td><td class="field-desc">KYC verification completion timestamp</td><td><div class="field-flags"><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">parentAccountId</td><td class="field-type">uuid?</td><td class="field-desc">Parent org for hierarchical structure</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">createdAt</td><td class="field-type">datetime</td><td class="field-desc">Creation timestamp UTC</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">updatedAt</td><td class="field-type">datetime</td><td class="field-desc">Last update timestamp UTC</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: SALES
+  ════════════════════════════════════════════ -->
+  <div id="sec-sales" class="schema-section">
+    <div class="section-intro">
+      Sales pipeline entities. Deals track the full lifecycle of an opportunity. Activities log all touchpoints. Quotes link to financial product offerings. All monetary values in DKK (or configurable currency) as integers (øre/cents) to avoid floating-point errors.
+    </div>
+
+    <div class="entities-grid">
+
+      <!-- DEAL -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-sales)">
+          <div class="entity-name" style="color:var(--c-sales)">deals</div>
+          <div class="entity-meta"><span class="e-badge" style="color:var(--c-sales);border-color:var(--c-sales)">pipeline</span></div>
+        </div>
+        <div class="entity-desc">Sales opportunity / deal record. Links contacts, accounts, and financial data. Partition key: /tenantId</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Deal unique ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">title</td><td class="field-type">string</td><td class="field-desc">Deal name / description</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">stage</td><td class="field-type">enum</td><td class="field-desc">prospect | qualified | proposal | negotiation | won | lost</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">valueOere</td><td class="field-type">integer</td><td class="field-desc">Deal value in øre (1/100 DKK) — avoids float errors</td><td><div class="field-flags"><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">currency</td><td class="field-type">string</td><td class="field-desc">ISO 4217 currency code (default: DKK)</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">probability</td><td class="field-type">integer</td><td class="field-desc">Close probability 0–100 (manual or AI-scored)</td><td></td></tr>
+          <tr><td class="field-name">aiProbability</td><td class="field-type">number?</td><td class="field-desc">AI model probability score (disclosed to data subjects)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">contactId</td><td class="field-type">uuid</td><td class="field-desc">Primary contact for the deal</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">accountId</td><td class="field-type">uuid?</td><td class="field-desc">Associated account/organisation</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">ownerId</td><td class="field-type">uuid</td><td class="field-desc">Responsible sales rep</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">pipelineId</td><td class="field-type">uuid</td><td class="field-desc">Sales pipeline configuration reference</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">expectedCloseDate</td><td class="field-type">date?</td><td class="field-desc">Expected close date (ISO 8601)</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">closedAt</td><td class="field-type">datetime?</td><td class="field-desc">Actual close timestamp</td><td><div class="field-flags"><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">lostReason</td><td class="field-type">string?</td><td class="field-desc">Reason for lost deal (for analytics)</td><td></td></tr>
+          <tr><td class="field-name">products</td><td class="field-type">object[]</td><td class="field-desc">[{productId, name, qty, unitValueOere}]</td><td></td></tr>
+          <tr><td class="field-name">customFields</td><td class="field-type">object?</td><td class="field-desc">Tenant-configurable extension fields</td><td></td></tr>
+          <tr><td class="field-name">createdAt</td><td class="field-type">datetime</td><td class="field-desc">Creation timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">updatedAt</td><td class="field-type">datetime</td><td class="field-desc">Last update</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+        </table>
+      </div>
+
+      <!-- ACTIVITIES -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-m365)">
+          <div class="entity-name" style="color:var(--c-m365)">activities</div>
+          <div class="entity-meta"><span class="e-badge" style="color:var(--c-m365);border-color:var(--c-m365)">M365</span></div>
+        </div>
+        <div class="entity-desc">All customer touchpoints: calls, emails, meetings, notes. M365 events auto-synced. Email bodies are PII — minimum retention. Partition key: /tenantId</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Activity unique ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">type</td><td class="field-type">enum</td><td class="field-desc">email | call | meeting | note | task | teams_message</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">subject</td><td class="field-type">string</td><td class="field-desc">Activity title / email subject</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">body</td><td class="field-type">string?</td><td class="field-desc">Content/notes — minimise, do not store full email bodies</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">contactId</td><td class="field-type">uuid?</td><td class="field-desc">Associated contact</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">dealId</td><td class="field-type">uuid?</td><td class="field-desc">Associated deal</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">userId</td><td class="field-type">uuid</td><td class="field-desc">CRM user who logged this activity</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">m365EventId</td><td class="field-type">string?</td><td class="field-desc">Microsoft Graph API event/email ID (for sync)</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">occurredAt</td><td class="field-type">datetime</td><td class="field-desc">When the activity took place</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">duration</td><td class="field-type">integer?</td><td class="field-desc">Duration in seconds (for calls/meetings)</td><td></td></tr>
+          <tr><td class="field-name">aiSummary</td><td class="field-type">string?</td><td class="field-desc">AI-generated meeting summary (GPT-4o) — disclosed to participants</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">createdAt</td><td class="field-type">datetime</td><td class="field-desc">Log creation timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: SUPPORT
+  ════════════════════════════════════════════ -->
+  <div id="sec-support" class="schema-section">
+    <div class="section-intro">
+      Customer support and ticketing. Tickets are sensitive — may contain financial details, complaints, and personal circumstances. Apply strict access control: only assigned agents and managers. SLA timers and escalation tracked server-side.
+    </div>
+
+    <div class="entities-grid">
+
+      <!-- TICKET -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-support)">
+          <div class="entity-name" style="color:var(--c-support)">tickets</div>
+          <div class="entity-meta"><span class="e-badge" style="color:var(--c-support);border-color:var(--c-support)">support</span></div>
+        </div>
+        <div class="entity-desc">Support requests, complaints, queries. Financial complaints may fall under Finanstilsynet reporting obligations. Partition key: /tenantId</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Ticket unique ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">ticketNumber</td><td class="field-type">string</td><td class="field-desc">Human-readable ID (e.g. TKT-2026-00142)</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">contactId</td><td class="field-type">uuid</td><td class="field-desc">Reporting contact</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">accountId</td><td class="field-type">uuid?</td><td class="field-desc">Associated account</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">status</td><td class="field-type">enum</td><td class="field-desc">new | open | pending | resolved | closed</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">priority</td><td class="field-type">enum</td><td class="field-desc">low | medium | high | critical</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">category</td><td class="field-type">string</td><td class="field-desc">Support category (product, billing, complaint, etc.)</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">isComplaint</td><td class="field-type">boolean</td><td class="field-desc">Formal financial complaint flag — may trigger regulatory reporting</td><td><div class="field-flags"><span class="flag flag-idx">idx</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">subject</td><td class="field-type">string</td><td class="field-desc">Ticket title</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">assignedTo</td><td class="field-type">uuid?</td><td class="field-desc">Assigned support agent</td><td><div class="field-flags"><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">sla</td><td class="field-type">object</td><td class="field-desc">{policyId, firstResponseDue, resolutionDue, breached}</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">channel</td><td class="field-type">enum</td><td class="field-desc">email | phone | teams | web | chat</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">aiSuggestedResponse</td><td class="field-type">string?</td><td class="field-desc">AI draft (not sent automatically — human must approve)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">resolvedAt</td><td class="field-type">datetime?</td><td class="field-desc">Resolution timestamp</td><td><div class="field-flags"><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">createdAt</td><td class="field-type">datetime</td><td class="field-desc">Ticket creation timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+        </table>
+      </div>
+
+      <!-- TICKET MESSAGES -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-support)">
+          <div class="entity-name" style="color:var(--c-support)">ticket_messages</div>
+        </div>
+        <div class="entity-desc">Individual messages/replies within a ticket thread. Contains PII — encrypted at field level. Partition key: /tenantId</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Message ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">ticketId</td><td class="field-type">uuid</td><td class="field-desc">Parent ticket</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">senderType</td><td class="field-type">enum</td><td class="field-desc">contact | agent | system | ai</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">senderId</td><td class="field-type">uuid</td><td class="field-desc">User ID or contact ID of sender</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">body</td><td class="field-type">string</td><td class="field-desc">Message content — field-level encrypted</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">attachments</td><td class="field-type">object[]?</td><td class="field-desc">[{name, blobUrl, sizeBytes}] — stored in Azure Blob</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">isInternal</td><td class="field-type">boolean</td><td class="field-desc">Internal agent note (not visible to contact)</td><td></td></tr>
+          <tr><td class="field-name">sentAt</td><td class="field-type">datetime</td><td class="field-desc">Timestamp of message</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: MARKETING
+  ════════════════════════════════════════════ -->
+  <div id="sec-marketing" class="schema-section">
+    <div class="section-intro">
+      Marketing and lead management. CRITICAL: all marketing activities must be based on opt-in consent (not legitimate interest in Danish financial sector for direct marketing). Consent records are immutable — never delete a consent withdrawal record.
+    </div>
+
+    <div class="entities-grid">
+
+      <!-- CAMPAIGN -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-marketing)">
+          <div class="entity-name" style="color:var(--c-marketing)">campaigns</div>
+        </div>
+        <div class="entity-desc">Marketing campaign definitions. Links to segments, consent requirements, and performance metrics. Partition key: /tenantId</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Campaign ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">name</td><td class="field-type">string</td><td class="field-desc">Campaign name</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">type</td><td class="field-type">enum</td><td class="field-desc">email | sms | push | multi_channel</td><td><div class="field-flags"><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">status</td><td class="field-type">enum</td><td class="field-desc">draft | scheduled | active | paused | completed</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">consentType</td><td class="field-type">string</td><td class="field-desc">Required consent category (must match contacts.gdpr.consents)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">segmentId</td><td class="field-type">uuid</td><td class="field-desc">Target segment</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">scheduledAt</td><td class="field-type">datetime?</td><td class="field-desc">Planned send time</td><td></td></tr>
+          <tr><td class="field-name">stats</td><td class="field-type">object</td><td class="field-desc">{sent, delivered, opened, clicked, unsubscribed, bounced}</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">createdBy</td><td class="field-type">uuid</td><td class="field-desc">User who created the campaign</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">createdAt</td><td class="field-type">datetime</td><td class="field-desc">Creation timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+        </table>
+      </div>
+
+      <!-- LEAD SCORE -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-marketing)">
+          <div class="entity-name" style="color:var(--c-marketing)">lead_scores</div>
+          <div class="entity-meta"><span class="e-badge" style="color:var(--c-gdpr);border-color:var(--c-gdpr)">AI/GDPR Art.22</span></div>
+        </div>
+        <div class="entity-desc">AI-generated lead and engagement scores. GDPR Art. 22 applies — profiling. Must disclose to data subjects. Human review must be available. Partition key: /tenantId</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Score record ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+          <tr><td class="field-name">contactId</td><td class="field-type">uuid</td><td class="field-desc">Scored contact</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">score</td><td class="field-type">integer</td><td class="field-desc">Score 0–100</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">grade</td><td class="field-type">enum</td><td class="field-desc">A | B | C | D | F</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">modelVersion</td><td class="field-type">string</td><td class="field-desc">AI model version used (for explainability)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">factors</td><td class="field-type">object[]</td><td class="field-desc">[{name, weight, value}] — explainability for Art. 22</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">humanReviewedBy</td><td class="field-type">uuid?</td><td class="field-desc">User who reviewed/overrode AI score</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">humanReviewedAt</td><td class="field-type">datetime?</td><td class="field-desc">Timestamp of human review</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">scoredAt</td><td class="field-type">datetime</td><td class="field-desc">Score calculation timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: INTEGRATIONS
+  ════════════════════════════════════════════ -->
+  <div id="sec-integrations" class="schema-section">
+    <div class="section-intro">
+      Embedded schema objects for Stacc (Open Banking) and Microsoft 365 data. These are stored as sub-documents within contacts/accounts — NOT as separate collections — to minimise cross-document joins and keep data co-located. Financial data sub-objects are always field-encrypted.
+    </div>
+
+    <div class="entities-grid">
+
+      <!-- STACC SNAPSHOT -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-stacc)">
+          <div class="entity-name" style="color:var(--c-stacc)">staccSnapshot (embedded in contacts/accounts)</div>
+          <div class="entity-meta"><span class="e-badge" style="color:var(--c-stacc);border-color:var(--c-stacc)">PSD2</span><span class="e-badge" style="color:var(--c-financial);border-color:var(--c-financial)">encrypted</span></div>
+        </div>
+        <div class="entity-desc">Financial snapshot from Stacc Open Banking API. Requires explicit PSD2 customer consent. Field-encrypted. Only accessible to permitted roles. Refreshed via webhook or scheduled sync.</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-name">staccCustomerId</td><td class="field-type">string</td><td class="field-desc">Stacc internal customer reference</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">consentId</td><td class="field-type">string</td><td class="field-desc">PSD2 consent reference from Stacc</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-gdpr">GDPR</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">consentExpiresAt</td><td class="field-type">datetime</td><td class="field-desc">When the PSD2 consent expires — auto-blocks access after</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">creditScore</td><td class="field-type">integer?</td><td class="field-desc">Credit score from Stacc (0–999)</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">creditBand</td><td class="field-type">enum?</td><td class="field-desc">excellent | good | fair | poor | very_poor</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">totalAssetsOere</td><td class="field-type">integer?</td><td class="field-desc">Total assets in øre (encrypted)</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">totalLiabilitiesOere</td><td class="field-type">integer?</td><td class="field-desc">Total liabilities in øre</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">monthlyIncomeOere</td><td class="field-type">integer?</td><td class="field-desc">Monthly income estimate in øre</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">activeProducts</td><td class="field-type">object[]?</td><td class="field-desc">[{type, provider, balanceOere, renewalDate}]</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">amlFlags</td><td class="field-type">object[]?</td><td class="field-desc">[{flag, severity, detectedAt}] — restricted access</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">kycStatus</td><td class="field-type">enum</td><td class="field-desc">not_started | pending | verified | failed | expired</td><td><div class="field-flags"><span class="flag flag-stacc">Stacc</span><span class="flag flag-enc">enc</span></div></td></tr>
+          <tr><td class="field-name">lastSyncedAt</td><td class="field-type">datetime</td><td class="field-desc">Last Stacc data refresh timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+        </table>
+      </div>
+
+      <!-- M365 SNAPSHOT -->
+      <div class="entity">
+        <div class="entity-header" style="border-left: 3px solid var(--c-m365)">
+          <div class="entity-name" style="color:var(--c-m365)">m365Profile (embedded in contacts)</div>
+          <div class="entity-meta"><span class="e-badge" style="color:var(--c-m365);border-color:var(--c-m365)">Graph API</span></div>
+        </div>
+        <div class="entity-desc">Microsoft 365 enrichment data pulled via Graph API. Stores minimal metadata — not full email content. Synced per M365 tenant configuration.</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-name">m365UserId</td><td class="field-type">string?</td><td class="field-desc">Entra ID object ID (if internal contact)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">outlookContactId</td><td class="field-type">string?</td><td class="field-desc">Outlook People contact ID for sync</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">lastEmailAt</td><td class="field-type">datetime?</td><td class="field-desc">Timestamp of most recent email exchange (metadata only)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">lastMeetingAt</td><td class="field-type">datetime?</td><td class="field-desc">Most recent calendar meeting timestamp</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">emailCount30d</td><td class="field-type">integer?</td><td class="field-desc">Email exchange count last 30 days (engagement signal)</td><td></td></tr>
+          <tr><td class="field-name">teamsPresence</td><td class="field-type">enum?</td><td class="field-desc">available | busy | away | offline (live from Graph)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-virtual">virtual</span></div></td></tr>
+          <tr><td class="field-name">sharePointFolderId</td><td class="field-type">string?</td><td class="field-desc">SharePoint document library folder for this contact's files</td><td></td></tr>
+          <tr><td class="field-name">lastSyncedAt</td><td class="field-type">datetime</td><td class="field-desc">Last Graph API sync</td><td><div class="field-flags"><span class="flag flag-auto">auto</span></div></td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: GDPR LAYER
+  ════════════════════════════════════════════ -->
+  <div id="sec-gdpr" class="schema-section">
+    <div class="section-intro">
+      The GDPR sub-object is embedded in every <strong>contacts</strong> document. It is immutable for withdrawal records and audit-logged for all changes. This is the core compliance mechanism for data subject rights, consent, and retention.
+    </div>
+
+    <div class="entities-grid">
+
+      <!-- GDPR OBJECT -->
+      <div class="entity" style="grid-column: 1 / -1">
+        <div class="entity-header" style="border-left: 3px solid var(--c-gdpr)">
+          <div class="entity-name" style="color:var(--c-gdpr)">contacts.gdpr (embedded sub-object)</div>
+          <div class="entity-meta"><span class="e-badge" style="color:var(--c-gdpr);border-color:var(--c-gdpr)">MANDATORY</span></div>
+        </div>
+        <div class="entity-desc">Every contact record must include this object. All consent records are append-only (immutable). Retention dates are auto-calculated. Rights requests create entries in the rights_requests collection.</div>
+        <table class="field-table">
+          <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+          <tr><td class="field-name">lawfulBasis</td><td class="field-type">enum</td><td class="field-desc">consent | contract | legal_obligation | vital_interests | public_task | legitimate_interests</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">processingPurposes</td><td class="field-type">string[]</td><td class="field-desc">Array of documented processing purposes (e.g. ["crm_sales","customer_support"])</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">consents</td><td class="field-type">object[]</td><td class="field-desc">[{type, version, givenAt, channel, withdrawnAt?, withdrawalReason?}] — APPEND ONLY</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">dataCategories</td><td class="field-type">string[]</td><td class="field-desc">Personal data categories stored (e.g. ["basic_contact","financial","behavioral"])</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">retentionPolicy</td><td class="field-type">string</td><td class="field-desc">Reference to tenant retention policy key</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">retentionExpiresAt</td><td class="field-type">datetime</td><td class="field-desc">Computed date when record must be reviewed/deleted</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-auto">auto</span></div></td></tr>
+          <tr><td class="field-name">dataSource</td><td class="field-type">string</td><td class="field-desc">How this contact's data was obtained (for Art. 13/14 records)</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">isErasureRequested</td><td class="field-type">boolean</td><td class="field-desc">Erasure (right to be forgotten) request pending</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">erasedAt</td><td class="field-type">datetime?</td><td class="field-desc">Timestamp of anonymisation/erasure completion</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-immut">immut</span></div></td></tr>
+          <tr><td class="field-name">marketingSuppressed</td><td class="field-type">boolean</td><td class="field-desc">True if contact has withdrawn marketing consent — auto-suppressed from all campaigns</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span><span class="flag flag-req">req</span></div></td></tr>
+          <tr><td class="field-name">doNotContact</td><td class="field-type">boolean</td><td class="field-desc">Hard opt-out from all communications</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">profilingOptOut</td><td class="field-type">boolean</td><td class="field-desc">Contact has exercised Art. 22 right to opt out of automated profiling/lead scoring</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+          <tr><td class="field-name">lastReviewedAt</td><td class="field-type">datetime?</td><td class="field-desc">Last DPO/admin data accuracy review date</td><td><div class="field-flags"><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+        </table>
+      </div>
+
+    </div>
+
+    <div class="entity-group" style="margin-top:24px">
+      <div class="group-label">// Data Subject Rights & Audit</div>
+      <div class="entities-grid">
+
+        <!-- RIGHTS REQUESTS -->
+        <div class="entity">
+          <div class="entity-header" style="border-left: 3px solid var(--c-gdpr)">
+            <div class="entity-name" style="color:var(--c-gdpr)">rights_requests</div>
+          </div>
+          <div class="entity-desc">Tracks all GDPR data subject rights requests (Art. 15–22). Must be fulfilled within 30 days. Immutable log. Partition key: /tenantId</div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+            <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Request ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">contactId</td><td class="field-type">uuid</td><td class="field-desc">Requesting data subject</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">type</td><td class="field-type">enum</td><td class="field-desc">access | erasure | rectification | restriction | portability | objection | human_review</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">status</td><td class="field-type">enum</td><td class="field-desc">received | in_progress | fulfilled | rejected | escalated</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">dueDateAt</td><td class="field-type">datetime</td><td class="field-desc">Deadline: receivedAt + 30 days (Art. 12)</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-gdpr">GDPR</span></div></td></tr>
+            <tr><td class="field-name">handledBy</td><td class="field-type">uuid?</td><td class="field-desc">User (DPO/admin) handling this request</td><td></td></tr>
+            <tr><td class="field-name">notes</td><td class="field-type">string?</td><td class="field-desc">Internal handling notes</td><td><div class="field-flags"><span class="flag flag-enc">enc</span></div></td></tr>
+            <tr><td class="field-name">receivedAt</td><td class="field-type">datetime</td><td class="field-desc">Request receipt timestamp</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">fulfilledAt</td><td class="field-type">datetime?</td><td class="field-desc">Completion timestamp</td><td><div class="field-flags"><span class="flag flag-immut">immut</span></div></td></tr>
+          </table>
+        </div>
+
+        <!-- AUDIT LOG -->
+        <div class="entity">
+          <div class="entity-header" style="border-left: 3px solid var(--c-audit)">
+            <div class="entity-name" style="color:var(--c-audit)">audit_log</div>
+            <div class="entity-meta"><span class="e-badge" style="color:var(--c-audit);border-color:var(--c-audit)">DORA + GDPR</span></div>
+          </div>
+          <div class="entity-desc">Immutable audit trail for all data access, changes, and exports. Required by GDPR (Art. 30), DORA (ICT audit), and Finanstilsynet. Never deleted — separate Cosmos container with TTL disabled. Partition key: /tenantId</div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th><th>Flags</th></tr>
+            <tr><td class="field-key">id</td><td class="field-type">uuid</td><td class="field-desc">Log entry ID</td><td><div class="field-flags"><span class="flag flag-req">PK</span><span class="flag flag-auto">auto</span></div></td></tr>
+            <tr><td class="field-name">tenantId</td><td class="field-type">uuid</td><td class="field-desc">Owning tenant</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">actor</td><td class="field-type">object</td><td class="field-desc">{userId, email, role, ipAddress, userAgent}</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">action</td><td class="field-type">enum</td><td class="field-desc">read | create | update | delete | export | login | consent_change | rights_request</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">resourceType</td><td class="field-type">string</td><td class="field-desc">Entity type affected (contact, deal, ticket, etc.)</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">resourceId</td><td class="field-type">uuid</td><td class="field-desc">ID of the affected record</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">changes</td><td class="field-type">object?</td><td class="field-desc">{before: {...}, after: {...}} — field-level diff (no PII values, only field names)</td><td><div class="field-flags"><span class="flag flag-immut">immut</span></div></td></tr>
+            <tr><td class="field-name">sensitiveAccess</td><td class="field-type">boolean</td><td class="field-desc">True if financial / Stacc / CPR data was accessed</td><td><div class="field-flags"><span class="flag flag-req">req</span><span class="flag flag-idx">idx</span></div></td></tr>
+            <tr><td class="field-name">timestamp</td><td class="field-type">datetime</td><td class="field-desc">Event timestamp UTC</td><td><div class="field-flags"><span class="flag flag-auto">auto</span><span class="flag flag-immut">immut</span><span class="flag flag-idx">idx</span></div></td></tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: INDEXES & PARTITIONS
+  ════════════════════════════════════════════ -->
+  <div id="sec-indexes" class="schema-section">
+    <div class="section-intro">
+      Cosmos DB partition key strategy and composite index definitions. Correct partitioning is critical for performance at scale and for GDPR tenant isolation. All partition keys include tenantId to ensure data never crosses tenant boundaries at the storage level.
+    </div>
+
+    <div class="entity-group">
+      <div class="group-label">// Cosmos DB Containers & Partition Strategy</div>
+      <div class="partition-grid">
+        <div class="part-card">
+          <div class="part-container">📦 tenants</div>
+          <div class="part-key">Partition key: /id</div>
+          <div class="part-reason">Small, rarely written. Single partition sufficient. No cross-tenant contamination risk.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 users</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">All queries scoped to a tenant. Low volume per tenant. Tenant isolation guaranteed at partition level.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 contacts</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">Core CRM entity. Tenant-scoped queries dominant. GDPR erasure can target entire partition per tenant.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 accounts</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">All account lookups are tenant-scoped. Stacc financial data co-located within tenant partition.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 deals</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">Pipeline views always tenant-scoped. Cross-partition queries (by ownerId) handled by composite index.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 activities</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">High-volume write container. Tenant isolation critical. TTL enabled per retention policy.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 tickets</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">Support queries tenant-scoped. Complaint flag queries use composite index.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 ticket_messages</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">High-volume. Field-encrypted bodies. TTL applied per ticket resolution + retention policy.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 campaigns</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">Low-medium volume. All lookups tenant-scoped.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 lead_scores</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">GDPR Art. 22 profiling records. Retain modelVersion for explainability. Separate from contacts for access control.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 rights_requests</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">GDPR rights tracking. Low volume. DPO access only. No TTL — retain indefinitely for compliance evidence.</div>
+        </div>
+        <div class="part-card">
+          <div class="part-container">📦 audit_log</div>
+          <div class="part-key">Partition key: /tenantId</div>
+          <div class="part-reason">DORA + GDPR immutable audit trail. No TTL. Append-only. High-volume writes. Azure Monitor backup for 1yr minimum. Separate dedicated throughput (RU/s).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="entity-group">
+      <div class="group-label">// Key Composite Indexes</div>
+      <table class="index-table">
+        <tr>
+          <th>Container</th>
+          <th>Index Fields</th>
+          <th>Order</th>
+          <th>Purpose</th>
+        </tr>
+        <tr><td>contacts</td><td>/tenantId, /type, /createdAt</td><td>ASC, ASC, DESC</td><td>List contacts by type, sorted by newest</td></tr>
+        <tr><td>contacts</td><td>/tenantId, /ownerId, /updatedAt</td><td>ASC, ASC, DESC</td><td>My contacts view per sales rep</td></tr>
+        <tr><td>contacts</td><td>/tenantId, /gdpr/retentionExpiresAt</td><td>ASC, ASC</td><td>Retention review scheduler — GDPR</td></tr>
+        <tr><td>contacts</td><td>/tenantId, /gdpr/marketingSuppressed</td><td>ASC, ASC</td><td>Campaign eligibility filter</td></tr>
+        <tr><td>deals</td><td>/tenantId, /stage, /expectedCloseDate</td><td>ASC, ASC, ASC</td><td>Pipeline board view per stage</td></tr>
+        <tr><td>deals</td><td>/tenantId, /ownerId, /stage</td><td>ASC, ASC, ASC</td><td>Per-rep pipeline view</td></tr>
+        <tr><td>deals</td><td>/tenantId, /closedAt, /valueOere</td><td>ASC, DESC, DESC</td><td>Revenue reporting by close date</td></tr>
+        <tr><td>activities</td><td>/tenantId, /contactId, /occurredAt</td><td>ASC, ASC, DESC</td><td>Contact activity timeline</td></tr>
+        <tr><td>activities</td><td>/tenantId, /dealId, /occurredAt</td><td>ASC, ASC, DESC</td><td>Deal activity timeline</td></tr>
+        <tr><td>tickets</td><td>/tenantId, /status, /priority, /createdAt</td><td>ASC, ASC, ASC, DESC</td><td>Support queue sorted by priority</td></tr>
+        <tr><td>tickets</td><td>/tenantId, /assignedTo, /status</td><td>ASC, ASC, ASC</td><td>Agent workload view</td></tr>
+        <tr><td>tickets</td><td>/tenantId, /isComplaint, /createdAt</td><td>ASC, ASC, DESC</td><td>Regulatory complaint reporting</td></tr>
+        <tr><td>audit_log</td><td>/tenantId, /resourceId, /timestamp</td><td>ASC, ASC, DESC</td><td>Access history per record (GDPR Art. 15)</td></tr>
+        <tr><td>audit_log</td><td>/tenantId, /sensitiveAccess, /timestamp</td><td>ASC, ASC, DESC</td><td>DORA sensitive data access report</td></tr>
+        <tr><td>rights_requests</td><td>/tenantId, /status, /dueDateAt</td><td>ASC, ASC, ASC</td><td>Overdue rights requests dashboard (30-day SLA)</td></tr>
+        <tr><td>lead_scores</td><td>/tenantId, /contactId, /scoredAt</td><td>ASC, ASC, DESC</td><td>Latest score per contact</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION: RELATIONSHIPS
+  ════════════════════════════════════════════ -->
+  <div id="sec-relationships" class="schema-section">
+    <div class="section-intro">
+      Entity relationship map. In Cosmos DB (NoSQL), relationships are managed via embedded sub-objects or reference IDs — no foreign key constraints. References are validated at application layer. Cross-container queries use the Cosmos DB change feed or Azure AI Search for complex joins.
+    </div>
+
+    <div class="rel-box">
+      <div class="rel-header">Core Relationships</div>
+      <div class="rel-list">
+        <div class="rel-item"><span class="rel-from">tenants</span><span class="rel-type">1 → N</span><span class="rel-to">users</span><span class="rel-note">One tenant has many CRM users (employees)</span></div>
+        <div class="rel-item"><span class="rel-from">tenants</span><span class="rel-type">1 → N</span><span class="rel-to">contacts</span><span class="rel-note">Strict tenant isolation — contacts belong to exactly one tenant</span></div>
+        <div class="rel-item"><span class="rel-from">tenants</span><span class="rel-type">1 → N</span><span class="rel-to">accounts</span><span class="rel-note">Organisations owned by tenant</span></div>
+        <div class="rel-item"><span class="rel-from">accounts</span><span class="rel-type">1 → N</span><span class="rel-to">contacts</span><span class="rel-note">Organisation has many individual contacts (contactId → accountId)</span></div>
+        <div class="rel-item"><span class="rel-from">accounts</span><span class="rel-type">0..1 → N</span><span class="rel-to">accounts</span><span class="rel-note">Hierarchical: parent account → subsidiary accounts (parentAccountId)</span></div>
+        <div class="rel-item"><span class="rel-from">users</span><span class="rel-type">1 → N</span><span class="rel-to">contacts</span><span class="rel-note">Relationship manager owns/is assigned to contacts</span></div>
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">embed</span><span class="rel-to">staccSnapshot</span><span class="rel-note">Stacc financial data embedded in contact document (field-encrypted)</span></div>
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">embed</span><span class="rel-to">m365Profile</span><span class="rel-note">M365 Graph API metadata embedded in contact document</span></div>
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">embed</span><span class="rel-to">gdpr object</span><span class="rel-note">GDPR consent & rights object embedded — always co-located with PII</span></div>
+      </div>
+    </div>
+
+    <div class="rel-box">
+      <div class="rel-header">Sales Relationships</div>
+      <div class="rel-list">
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">1 → N</span><span class="rel-to">deals</span><span class="rel-note">Contact can have multiple deals (one primary contact per deal)</span></div>
+        <div class="rel-item"><span class="rel-from">accounts</span><span class="rel-type">1 → N</span><span class="rel-to">deals</span><span class="rel-note">Organisation-level deals (accountId on deal)</span></div>
+        <div class="rel-item"><span class="rel-from">users</span><span class="rel-type">1 → N</span><span class="rel-to">deals</span><span class="rel-note">Sales rep owns deals (ownerId on deal)</span></div>
+        <div class="rel-item"><span class="rel-from">deals</span><span class="rel-type">1 → N</span><span class="rel-to">activities</span><span class="rel-note">Deal timeline: all touchpoints linked via dealId</span></div>
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">1 → N</span><span class="rel-to">activities</span><span class="rel-note">Contact interaction history via contactId</span></div>
+        <div class="rel-item"><span class="rel-from">activities</span><span class="rel-type">ref</span><span class="rel-to">m365 events</span><span class="rel-note">m365EventId links to Microsoft Graph calendar/email (external ref)</span></div>
+      </div>
+    </div>
+
+    <div class="rel-box">
+      <div class="rel-header">Support Relationships</div>
+      <div class="rel-list">
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">1 → N</span><span class="rel-to">tickets</span><span class="rel-note">Contact raises support tickets (contactId on ticket)</span></div>
+        <div class="rel-item"><span class="rel-from">tickets</span><span class="rel-type">1 → N</span><span class="rel-to">ticket_messages</span><span class="rel-note">Thread of messages per ticket (ticketId on message)</span></div>
+        <div class="rel-item"><span class="rel-from">users</span><span class="rel-type">1 → N</span><span class="rel-to">tickets</span><span class="rel-note">Support agent assigned to tickets (assignedTo)</span></div>
+      </div>
+    </div>
+
+    <div class="rel-box">
+      <div class="rel-header">Marketing Relationships</div>
+      <div class="rel-list">
+        <div class="rel-item"><span class="rel-from">campaigns</span><span class="rel-type">N → N</span><span class="rel-to">contacts</span><span class="rel-note">Via segments: contacts matched to campaigns by segment criteria + consent filter</span></div>
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">1 → N</span><span class="rel-to">lead_scores</span><span class="rel-note">Score history per contact (multiple versions over time)</span></div>
+        <div class="rel-item"><span class="rel-from">contacts.gdpr</span><span class="rel-type">gate</span><span class="rel-to">campaigns</span><span class="rel-note">GDPR consent gate: marketingSuppressed=true blocks all campaign sends</span></div>
+      </div>
+    </div>
+
+    <div class="rel-box">
+      <div class="rel-header">GDPR & Audit Relationships</div>
+      <div class="rel-list">
+        <div class="rel-item"><span class="rel-from">contacts</span><span class="rel-type">1 → N</span><span class="rel-to">rights_requests</span><span class="rel-note">Data subject can submit multiple rights requests over time</span></div>
+        <div class="rel-item"><span class="rel-from">all entities</span><span class="rel-type">→ write</span><span class="rel-to">audit_log</span><span class="rel-note">Every create/read/update/delete/export writes an immutable audit entry</span></div>
+        <div class="rel-item"><span class="rel-from">contacts.gdpr.isAnonymised</span><span class="rel-type">→ cascade</span><span class="rel-to">all linked entities</span><span class="rel-note">Erasure: cascades PII removal to activities, ticket_messages, lead_scores (tombstone retained for audit)</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /page -->
+
+<script>
+function show(sec) {
+  document.querySelectorAll('.schema-section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('visible');
+  event.target.classList.add('active');
+  window.scrollTo({top: 60, behavior: 'smooth'});
+}
+</script>
+
+</body>
+</html>
