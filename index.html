@@ -215,6 +215,7 @@ body{background:var(--canvas);color:var(--ink);font-family:'Geist',sans-serif;fo
       <button class="btn btn-green" style="width:100%;justify-content:center;padding:10px" onclick="doSetPw()">Aktiver konto →</button>
     </div>
     <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:20px">NordCRM · Fortroligt system · Kun autoriserede brugere</div>
+    <div style="text-align:center;margin-top:8px"><span onclick="if(confirm('Nulstil login-data? Klik OK for at rydde localStorage og prøve igen.')){localStorage.clear();sessionStorage.clear();location.reload();}" style="font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline;opacity:.4">↺ Nulstil login-data</span></div>
   </div>
 </div>
 
@@ -484,6 +485,14 @@ function isAdmin(){const u=currentUser();return u&&u.role==='admin';}
 
 function ensureAdmin(){
   let us=AUTH.users;
+  // Migrate old 'password' field to 'pw'
+  let changed=false;
+  us=us.map(u=>{
+    if(u.password&&!u.pw){u.pw=u.password;delete u.password;changed=true;}
+    if(!u.dk){u.dk=u.id;changed=true;}
+    return u;
+  });
+  if(changed){AUTH.users=us;}
   if(!us.find(u=>u.email===ADMIN_EMAIL)){
     us.unshift({id:'admin_0',email:ADMIN_EMAIL,name:'Johann Odinsson',initials:'JO',role:'admin',status:'active',pw:hashPw('Opendo2026!'),createdAt:new Date().toISOString(),dk:'admin_0'});
     AUTH.users=us;
@@ -1128,11 +1137,15 @@ function doLogin(){
   const email=document.getElementById('li-email').value.trim();
   const pw=document.getElementById('li-pw').value;
   if(!email||!pw){err.style.display='block';err.textContent='Udfyld e-mail og adgangskode';return;}
+  // Ensure admin always exists with correct password
+  ensureAdmin();
   const users=AUTH.users;
   const user=users.find(u=>u.email.toLowerCase()===email.toLowerCase()&&u.pw===hashPw(pw)&&u.status==='active');
   if(!user){
-    const pend=users.find(u=>u.email.toLowerCase()===email.toLowerCase()&&(u.status==='pending'||u.status==='active_pending_pw'));
-    err.style.display='block';err.textContent=pend?'Din konto afventer aktivering af administrator':'Forkert e-mail eller adgangskode';return;
+    const emailMatch=users.find(u=>u.email.toLowerCase()===email.toLowerCase());
+    if(!emailMatch){err.style.display='block';err.textContent='E-mail ikke fundet i systemet';return;}
+    if(emailMatch.status==='pending'||emailMatch.status==='active_pending_pw'){err.style.display='block';err.textContent='Din konto afventer aktivering';return;}
+    err.style.display='block';err.textContent='Forkert adgangskode';return;
   }
   AUTH.session={id:user.id,email:user.email,name:user.name,initials:user.initials||inits(user.name),role:user.role,dk:user.dk};
   launchApp();
